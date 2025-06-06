@@ -1,0 +1,27 @@
+Camera parameters
+
+Generated: Wednesday, April 29, 2020 15:16:27
+
+Name	Data	Units	Precision
+Descriptor	Sony FDR-X3000 HD Medium Water		
+Camera model	Derived from CAL		
+Image rows	1080	Pixels	
+Image columns	1920	Pixels	
+X Pixel size	0.002370	mm	
+Y Pixel size	0.002370	mm	
+X PP Offset	-0.01265	mm	Fixed parameter
+Y PP Offset	-0.01437	mm	Fixed parameter
+Focal length	3.46775	mm	Fixed parameter
+Radial distortion (K3)	-1.54255e-03	mm^-2	Fixed parameter
+Radial distortion (K5)	1.16002e-03	mm^-4	Fixed parameter
+Radial distortion (K7)	0.00000e+00	mm^-6	Fixed parameter
+Decentring distortion (P1)	-1.10888e-03	mm^-1	Fixed parameter
+Decentring distortion (P2)	8.85276e-04	mm^-1	Fixed parameter
+Orthogonality	0.00000e+00	dimensionless	Fixed parameter
+Affinity	-6.21266e-04	dimensionless	Fixed parameter
+Camera X	177.76033	mm	Fixed parameter
+Camera Y	0.00000	mm	Fixed parameter
+Camera Z	0.00000	mm	Fixed parameter
+Omega	-0.22343	degrees	Fixed parameter
+Phi	4.77640	degrees	Fixed parameter
+Kappa	0.94215	degrees	Fixed parameter
