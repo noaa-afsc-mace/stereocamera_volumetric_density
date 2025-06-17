@@ -42,7 +42,7 @@ detect_single_logistic = function(parm,vol,rng,fishcount){
     # poisson likelihood?
     # ll=likpois(round(fishcount[i]/vol[i]), round(d_hat), log = TRUE)*fishcount[i]*-1
     # normal?
-    ll=liknorm(fishcount[i]/vol[i], d_hat, log = TRUE)*fishcount[i]*-1
+    ll=dnorm(fishcount[i]/vol[i], d_hat, log = TRUE)*fishcount[i]*-1
     # key part here is to multiply the likelihood by the number of observations in the bin.
     # this way bins with more fish in them drive the fit
     like[i]=ll

@@ -4,9 +4,6 @@
 
 
 rm(list = ls())
-library(likelihoodExplore)
-library(optimx)
-
 
 ##########################################################################
 # get the volume estimated
@@ -30,13 +27,12 @@ targets$RANGE=targets$RANGE/100# change units from cm to m
 dens <- get_dens(targets=targets, vol_func=vol_func$vol_func)
 
 # minimization
-out=opm(par=c(500,4,-2), fn=detect_single_logistic, gr = NULL, vol=dens$vol,
-        rng=dens$bin_mids,fishcount=dens$bin_counts,method="Nelder-Mead")
-
+out <- optim(par=c(500,4,-2), fn = detect_single_logistic, vol=dens$vol,
+              rng=dens$bin_mids,fishcount=dens$bin_counts)
 
 # now we multiply the two functions and integrate
 # we compute the effective area based on volume and detection functions
-params=c(vol_func$p_vol,out$p1,out$p2)
+params=c(vol_func$p_vol,out$par[1],out$par[2])
 # the parameters here are essentially L50, and SR equivalents, rather than the
 # typical slope intercept of the logistic regression.  The third parameter in the optimization is the scale paramter,
 # we ignore it so that the function maximizes at 1
