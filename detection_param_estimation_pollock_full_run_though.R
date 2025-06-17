@@ -1,30 +1,18 @@
 # this is an example script with all the components in a single run, with the goal of
 # providing a baseline for comparing a more structured approach - without plotting!
 
-
-
 rm(list = ls())
+library(StereoCamVolume)
+
+# this data set comes with the package now
+?pollock
+str(pollock$matcal)
+str(pollock$targets)
 
 ##########################################################################
 # get the volume estimated
-library(R.matlab)
-library(ptinpoly)
-library(StereoCamVolume)
-
-# reading in matlab file with stereo calibration parameters
-matcal <- readMat("volume_estimation//minicam_09262023_cal_sebastes.mat")
-vol_func <- get_vol_func(matcal)
-
-######################################################################
-#  TARGET DETECTION FUNCTION ############
-
-# read in fish data
-targets<-read.csv("detection_function/targets.csv",header=TRUE)
-targets=targets |> subset(SPECIES_GROUP=="Adult_pollock")
-targets$RANGE=targets$RANGE/100# change units from cm to m
-
-
-dens <- get_dens(targets=targets, vol_func=vol_func$vol_func)
+vol_func <- get_vol_func(pollock$matcal)
+dens <- get_dens(targets=pollock$targets, vol_func=vol_func$vol_func)
 
 # minimization
 out <- optim(par=c(500,4,-2), fn = detect_single_logistic, vol=dens$vol,
@@ -50,8 +38,7 @@ plot(xseq, eff_vol_func(xseq, params))
 eff_vol=integrate(eff_vol_func,params,lower =0, upper =15)
 
 # now we can turn the counts-by-frame into density-by-frame
-count_targets <- aggregate(FRAME_NUMBER ~ FRAME_NUMBER, data = targets, FUN = length)
-count_targets <- as.data.frame(table(targets$FRAME_NUMBER), stringsAsFactors = FALSE)
+count_targets <- as.data.frame(table(pollock$targets$FRAME_NUMBER), stringsAsFactors = FALSE)
 names(count_targets) <- c("FRAME_NUMBER", "COUNT")
 count_targets$FRAME_NUMBER <- as.numeric(count_targets$FRAME_NUMBER)
 count_targets$DENSITY <- with(count_targets, COUNT/eff_vol$value)

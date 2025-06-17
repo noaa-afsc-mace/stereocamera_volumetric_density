@@ -56,12 +56,12 @@ get_vol_func <- function(matcal){
   grid_full=matrix(c(grid_frame$x,grid_frame$y,grid_frame$z),length(grid_frame$z),3)
   faces=t(matrix(c(1,2,3,1,4,3,4,5,3,5,2,3,1,2,4,4,5,2),3,6))
   verts_left=pos_l[c(1,9,2,3,6),]
-  pts_in_left=pip3d(verts_left,faces,grid_full)
+  pts_in_left=ptinpoly::pip3d(verts_left,faces,grid_full)
   in_left=which(pts_in_left==1)
   grid_left=grid_full[in_left,]
   # right cone
   verts_right=pos_r[c(1,9,2,3,6),]
-  pts_in_right=pip3d(verts_right,faces,grid_left)
+  pts_in_right=ptinpoly::pip3d(verts_right,faces,grid_left)
   in_right=which(pts_in_right==1)
   grid_both=grid_left[in_right,]
   # now to figure out the "change in volume" function
