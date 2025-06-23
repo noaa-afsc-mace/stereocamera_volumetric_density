@@ -1,0 +1,18 @@
+Package: StereoCamVolume
+Title: Calculate fish density from stereo camerage imagery 
+Version: 0.0.0.9000
+Authors@R: 
+    c(person(given="Kresimir", family="Williams", email="kresimir.williams@noaa.gov", role = c("aut", "cre")),
+	person(given="Cole", family="Monnahan", role="aut"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: 
+    R (>= 4.0)
+Imports:
+    ptinpoly
+LazyData: true
+Suggests: 
+    R.matlab
