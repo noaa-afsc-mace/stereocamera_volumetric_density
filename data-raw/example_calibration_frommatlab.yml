@@ -1,0 +1,67 @@
+|
+  Camera1:
+    Extrinsic:
+      R:
+        r1c1: 1.0
+        r1c2: 0.0
+        r1c3: 0.0
+        r2c1: 0.0
+        r2c2: 1.0
+        r2c3: 0.0
+        r3c1: 0.0
+        r3c2: 0.0
+        r3c3: 1.0
+      T:
+        t1: 0.0
+        t2: 0.0
+        t3: 0.0
+    Intrinsic:
+      focal_point:
+        h: 2055.1326773
+        v: 2054.2722774
+      principal_point:
+        h: 992.1219792
+        v: 733.8031522
+      image_size:
+        width: 1536.0
+        height: 2048.0
+      radial_distortion:
+        k1: -0.0489446
+        k2: 0.0802278
+        k3: 0.2728556
+      tangential_distortion:
+        p1: -0.001493
+        p2: -0.0002102
+  Camera2:
+    Extrinsic:
+      R:
+        r1c1: 0.9999444
+        r1c2: -0.0036426
+        r1c3: 0.0098976
+        r2c1: 0.0036533
+        r2c2: 0.9999928
+        r2c3: -0.0010654
+        r3c1: -0.0098936
+        r3c2: 0.0011015
+        r3c3: 0.9999505
+      T:
+        t1: -152.7244178
+        t2: -0.3230452
+        t3: 2.0964518
+    Intrinsic:
+      focal_point:
+        h: 2065.0376643
+        v: 2064.8043376
+      principal_point:
+        h: 1047.3874327
+        v: 778.4430966
+      image_size:
+        width: 1536.0
+        height: 2048.0
+      radial_distortion:
+        k1: -0.0562267
+        k2: 0.2190325
+        k3: -0.3733132
+      tangential_distortion:
+        p1: -0.0015351
+        p2: 0.0009384

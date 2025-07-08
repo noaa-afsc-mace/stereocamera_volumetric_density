@@ -2,18 +2,22 @@
 % Please edit documentation in R/volume.R
 \name{get_vol_func}
 \alias{get_vol_func}
-\title{Get volume from a Matlab input list. Everything hard-coded still FIX ME}
+\title{Get volume function (change in joint imaging volume with range) from a calibration.}
 \usage{
-get_vol_func(matcal)
+get_vol_func(Cal, max_extent = 8, grid_size = 0.1)
 }
 \arguments{
-\item{matcal}{A list of calibration values from the \code{readMat} function.}
+\item{max_extent}{distance in m determining range extent of volume field.}
+
+\item{grid_size}{grid spacing in m determining the density of the point cloud.}
+
+\item{cal}{A yaml file (full path) from which to read the calibration values.}
 }
 \value{
 A list containing the function vol_func and a vector of coefficients p_vol
 }
 \description{
-Get volume from a Matlab input list. Everything hard-coded still FIX ME
+Get volume function (change in joint imaging volume with range) from a calibration.
 }
 \details{
 to do
