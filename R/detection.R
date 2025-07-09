@@ -53,31 +53,35 @@ eval_single_logistic = function(parm,vol,rng,fishcount){
   return(sum(like))
 }
 
-#' single logistic fitting - convenience function that rolls all three steps of fitting a function into one
-#' @param target_ranges vector of ranges for a given target
-#' @param vol_func volume function as derived from the get_volume method
-#' @param nbins number of bins to use for density histogram
-#' @param plotting boolean flag to indicate whether to make plots
-#' @param start_params Vector of parameters for single logistic (scale,r50,slope)
-#' @export
-fit_single_logistic = function(target_ranges,vol_func,nbins,plotting=FALSE,start_params=NULL){
-  # do the binning bit
-  range_bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
-  range_bin_mids=range_bin_edges[1:nbins]+(range_bin_edges[2]-range_bin_edges[1])/2
 
-  vol=numeric(length=length(range_bin_mids))
-  bin_counts=numeric(length=length(range_bin_mids))
-  for (i in 1:length(range_bin_mids)){
-    # this is integrating how much volume is in each bin to get to density
-    v=integrate(vol_func,lower = range_bin_edges[i], upper = range_bin_edges[i+1])
-    vol[i]=v$value
-    ind=which(target_ranges>range_bin_edges[i] & target_ranges<=range_bin_edges[i+1])
-    bin_counts[i]=length(ind)
-  }
-  dens=bin_counts/vol
-  if (plotting){
-    plot(range_bin_mids,dens)
-  }
+
+  #' single logistic fitting - convenience function that rolls all three steps of fitting a function into one
+  #' @param target_ranges vector of ranges for a given target
+  #' @param vol_func volume function as derived from the get_volume method
+  #' @param nbins number of bins to use for density histogram
+  #' @param plotting boolean flag to indicate whether to make plots
+  #' @param start_params Vector of parameters for single logistic (scale,r50,slope)
+  #' @export
+  fit_single_logistic = function(target_ranges,vol_func,nbins,plotting=FALSE,start_params=NULL){
+    # do the binning bit
+    density=list()
+
+    range_bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
+    range_bin_mids=range_bin_edges[1:nbins]+(range_bin_edges[2]-range_bin_edges[1])/2
+
+    vol=numeric(length=length(range_bin_mids))
+    bin_counts=numeric(length=length(range_bin_mids))
+    for (i in 1:length(range_bin_mids)){
+      # this is integrating how much volume is in each bin to get to density
+      v=integrate(vol_func,lower = range_bin_edges[i], upper = range_bin_edges[i+1])
+      vol[i]=v$value
+      ind=which(target_ranges>range_bin_edges[i] & target_ranges<=range_bin_edges[i+1])
+      bin_counts[i]=length(ind)
+    }
+    dens=bin_counts/vol
+    if (plotting){
+      plot(range_bin_mids,dens)
+    }
 
   #run minimization
   # good starting params for single logistic
@@ -96,8 +100,72 @@ fit_single_logistic = function(target_ranges,vol_func,nbins,plotting=FALSE,start
     y=func_single_logistic(out$par,x)
     lines(x,y,col="red")
   }
-  return(out)
-}
+  density$vol=vol
+  density$bin_counts=bin_counts
+  density$rng=range_bin_mids
+  density$dens=dens
+  return(list(model_output=out,density_data=density))
+  }
+
+
+
+  #' single logistic fitting - convenience function that rolls all three steps of fitting a function into one
+  #' @param target_ranges vector of ranges for a given target
+  #' @param vol_func volume function as derived from the get_volume method
+  #' @param nbins number of bins to use for density histogram
+  #' @param plotting boolean flag to indicate whether to make plots
+  #' @param start_params Vector of parameters for single logistic (scale,r50,slope)
+  #' @export
+  fit_single_logistic_glm = function(target_ranges,vol_func,nbins,plotting=FALSE,exp_dens=NULL){
+    # do the binning bit
+    density=list()
+
+    range_bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
+    range_bin_mids=range_bin_edges[1:nbins]+(range_bin_edges[2]-range_bin_edges[1])/2
+
+    vol=numeric(length=length(range_bin_mids))
+    bin_counts=numeric(length=length(range_bin_mids))
+    for (i in 1:length(range_bin_mids)){
+      # this is integrating how much volume is in each bin to get to density
+      v=integrate(vol_func,lower = range_bin_edges[i], upper = range_bin_edges[i+1])
+      vol[i]=v$value
+      ind=which(target_ranges>range_bin_edges[i] & target_ranges<=range_bin_edges[i+1])
+      bin_counts[i]=length(ind)
+    }
+    dens=bin_counts/vol
+    if (plotting){
+      plot(range_bin_mids,dens)
+    }
+    # expected density
+    if (is.null(exp_dens)){
+      exp_dens=max(dens)
+    }
+
+    # create data frame with appropriate inputs for glm
+    exp_count=exp_dens*vol
+    dat=data.frame(rng=range_bin_mids,dens,exp_count,obs_count=bin_counts)
+    # kludge here - can't have more successes than trials!
+    ind=which(dat$obs_count>dat$exp_count)
+    dat$obs_count[ind]=dat$exp_count[ind]
+
+    out=glm(formula = cbind(obs_count, exp_count - obs_count) ~ rng,
+        data = dat,
+        family = binomial(link="logit"))
+
+
+
+
+    if (plotting){
+      x=seq(0, max(range_bin_edges),length.out=100)
+      y=func_single_logistic(out$par,x)
+      lines(x,y,col="red")
+    }
+    density$vol=vol
+    density$bin_counts=bin_counts
+    density$rng=range_bin_mids
+    density$dens=dens
+    return(list(model_output=out,density_data=density))
+  }
 
 #' double logistic function
 #' @param parm Vector of parameters for single logistic (scale,r50,slope)
@@ -138,6 +206,7 @@ eval_double_logistic = function(parm,vol,rng,fishcount){
 #' @export
 fit_double_logistic = function(target_ranges,vol_func,nbins,plotting=FALSE,start_params=NULL){
   # do the binning bit
+  density=list()
   range_bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
   range_bin_mids=range_bin_edges[1:nbins]+(range_bin_edges[2]-range_bin_edges[1])/2
 
@@ -174,14 +243,18 @@ fit_double_logistic = function(target_ranges,vol_func,nbins,plotting=FALSE,start
     y=func_double_logistic(out$par,x)
     lines(x,y,col="red")
   }
-  return(out)
+  density$vol=vol
+  density$bin_counts=bin_counts
+  density$rng=range_bin_mids
+  density$dens=dens
+  return(list(model_output=out,density_data=density))
 }
 
 #' normal function
 #' @param parm Vector of parameters for single logistic (scale,r50,slope)
 #' @param x vector of range values
 #' @export
-func_normal = function(parm,x){parm[1]*exp(-((x-parm[2])^2/(2*parm[3]^2)))}
+func_normal = function(parm,x){parm[1]*exp(-((x-parm[2])^2/(2*parm[3]^2)))}# normal "kernel"
 
 
 #' normal evaluation
@@ -205,4 +278,55 @@ eval_normal = function(parm,vol,rng,fishcount){
     like[i]=ll
   }
   return(sum(like))
+}
+
+#' "normal" fitting - convenience function that rolls all three steps of fitting a function into one
+#' @param target_ranges vector of ranges for a given target
+#' @param vol_func volume function as derived from the get_volume method
+#' @param nbins number of bins to use for density histogram
+#' @param plotting boolean flag to indicate whether to make plots
+#' @param start_params Vector of parameters for single logistic (scale,r50,slope)
+#' @export
+fit_normal = function(target_ranges,vol_func,nbins,plotting=FALSE,start_params=NULL){
+  # do the binning bit
+  density=list()
+  range_bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
+  range_bin_mids=range_bin_edges[1:nbins]+(range_bin_edges[2]-range_bin_edges[1])/2
+
+  vol=numeric(length=length(range_bin_mids))
+  bin_counts=numeric(length=length(range_bin_mids))
+  for (i in 1:length(range_bin_mids)){
+    # this is integrating how much volume is in each bin to get to density
+    v=integrate(vol_func,lower = range_bin_edges[i], upper = range_bin_edges[i+1])
+    vol[i]=v$value
+    ind=which(target_ranges>range_bin_edges[i] & target_ranges<=range_bin_edges[i+1])
+    bin_counts[i]=length(ind)
+  }
+  dens=bin_counts/vol
+  if (plotting){
+    plot(range_bin_mids,dens)
+  }
+
+  #run minimization
+  # good starting params for single logistic
+  if (is.null(start_params)){
+    dens_sort=sort(dens,decreasing=TRUE)
+    scale=mean(dens_sort[1:5])
+    r_mean = sum(range_bin_mids*dens)/sum(dens)
+    r_std=1
+    start_params=c(scale,r_mean,r_std)}
+
+
+  out <- optim(par=start_params, fn = eval_normal, vol=vol,
+               rng=range_bin_mids,fishcount=bin_counts)
+  if (plotting){
+    x=seq(0, max(range_bin_edges),length.out=100)
+    y=func_normal(out$par,x)
+    lines(x,y,col="red")
+  }
+  density$vol=vol
+  density$bin_counts=bin_counts
+  density$rng=range_bin_mids
+  density$dens=dens
+  return(list(model_output=out,density_data=density))
 }
