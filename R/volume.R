@@ -2,11 +2,12 @@
 #' @param cal A yaml file (full path) from which to read the calibration values.
 #' @param max_extent distance in m determining range extent of volume field.
 #' @param grid_size grid spacing in m determining the density of the point cloud.
+#' @param plotting boolean flag to indicate whether to make plots
 #' @return A list containing the function vol_func and a vector of coefficients p_vol
 #' @references Bouget (2008) Camera calibration toolbox for Matlab. Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
 #' @details to do
 #' @export
-get_vol_func <- function(Cal, max_extent=8, grid_size=0.1){
+get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
   # code below is adopted from the camera calibration toolbox
   #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
   # cited as Bouguet, J.Y., 2008. Camera calibration toolbox for Matlab [online]. [Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
@@ -117,5 +118,14 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1){
 
   # create the function object for itegration
   vol_func<- function(x){p_vol[1]+p_vol[2]*x+p_vol[3]*x^2}
+
+  # plot if asked to
+  if (plotting){
+    plot(range_centers,vol,xlab='range from camera (m)',ylab='change in volume')
+    x=seq(0, max(range_centers),length.out=100)
+    y=vol_func(x)
+    lines(x,y,col="red")
+  }
+
   return(list(vol_func=vol_func, p_vol=p_vol, vol=vol, range_centers=range_centers))
 }

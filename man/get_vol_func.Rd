@@ -4,12 +4,14 @@
 \alias{get_vol_func}
 \title{Get volume function (change in joint imaging volume with range) from a calibration.}
 \usage{
-get_vol_func(Cal, max_extent = 8, grid_size = 0.1)
+get_vol_func(Cal, max_extent = 8, grid_size = 0.1, plotting = FALSE)
 }
 \arguments{
 \item{max_extent}{distance in m determining range extent of volume field.}
 
 \item{grid_size}{grid spacing in m determining the density of the point cloud.}
+
+\item{plotting}{boolean flag to indicate whether to make plots}
 
 \item{cal}{A yaml file (full path) from which to read the calibration values.}
 }

@@ -330,3 +330,4 @@ fit_normal = function(target_ranges,vol_func,nbins,plotting=FALSE,start_params=N
   density$dens=dens
   return(list(model_output=out,density_data=density))
 }
+

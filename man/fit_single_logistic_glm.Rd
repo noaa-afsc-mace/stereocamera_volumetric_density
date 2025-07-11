@@ -9,7 +9,7 @@ fit_single_logistic_glm(
   vol_func,
   nbins,
   plotting = FALSE,
-  start_params = NULL
+  exp_dens = NULL
 )
 }
 \arguments{
