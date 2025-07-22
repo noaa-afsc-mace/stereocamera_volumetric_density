@@ -4,14 +4,24 @@
 \alias{fit_density_function}
 \title{density function fitting. Models specified with a method flag.}
 \usage{
-fit_density_function(density_data, method = "logistic glm", plotting = FALSE)
+fit_density_function(
+  density_data,
+  method = c("logistic glm", "logistic gam"),
+  formula = NULL,
+  dostepAIC = TRUE,
+  plotting = FALSE
+)
 }
 \arguments{
 \item{density_data}{vector of ranges for a given target}
 
 \item{method}{flag specifying which model to use. Valid choices include 'logistic glm', ADD}
 
+\item{formula}{optional formula to pass to the model, otherwise defaults are used}
+
 \item{plotting}{boolean flag to indicate whether to make plots}
+
+\item{stepAIC}{boolean flag to do backwards step AIC selection or not}
 }
 \value{
 A R model output structure
