@@ -9,9 +9,9 @@ animals are in the bin.}
 get_dens(targets, vol_func, nbins = 25)
 }
 \arguments{
-\item{targets}{to do}
+\item{targets}{testing}
 
-\item{vol_func}{Volume function as returned by \link{\code{get_vol_func}}}
+\item{vol_func}{Volume function as returned by}
 
 \item{nbins}{to do}
 }
