@@ -15,8 +15,13 @@
 #' @export
 #' @return A data frame containing range, number observed and number expected. The number observed is constrained to be <=number expected.
 prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=FALSE){
-  bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
-  bin_mids=bin_edges[1:nbins]+(bin_edges[2]-bin_edges[1])/2
+  if (is.null(nbins)){# Sturgis
+    nbins=ceiling(log2(length(target_ranges))+1)
+  }
+
+    bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
+    bin_mids=bin_edges[1:nbins]+(bin_edges[2]-bin_edges[1])/2
+
 
   vol=numeric(length=length(bin_mids))
   bin_counts=numeric(length=length(bin_mids))
@@ -74,16 +79,17 @@ fit_density_function = function(density_data,
       formula <- cbind(obs_count, exp_count - obs_count) ~ range + I(range^2) + I(range^3) +I(range^4)
     out <- glm(formula = formula, data = density_data,
                family = binomial(link="logit"))
+      if(dostepAIC) out <- step(out)
+
   } else if(method=='logistic gam'){
     formula <- cbind(obs_count, exp_count - obs_count) ~ s(range)
     out <- gam::gam(formula = formula, data = density_data,
                   family = binomial(link="logit"))
   }
-  if(dostepAIC) out <- step(out)
-  detect.function <- function(range) {
-    predict(out, newdata=data.frame(range=range), type='response')
-  }
 
+  detect.function <- function(range) {
+  predict(out, newdata=data.frame(range=range), type='response')
+}
   if (plotting){
     plot(density_data$range,density_data$obs_count/density_data$exp_count,xlab='range from camera (m)',ylab='probability of detection')
     x=seq(0, max(density_data$range),length.out=100)
