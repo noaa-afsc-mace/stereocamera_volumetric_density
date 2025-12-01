@@ -16,7 +16,7 @@
         t2: 0.0
         t3: 0.0
     Intrinsic:
-      focal_point:
+      focal_length:
         h: 1387.2402876
         v: 1385.2286878
       principal_point:
@@ -49,7 +49,7 @@
         t2: -0.9661948
         t3: -7.8965687
     Intrinsic:
-      focal_point:
+      focal_length:
         h: 1374.8846332
         v: 1374.6196087
       principal_point:

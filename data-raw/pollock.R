@@ -4,7 +4,7 @@ if(!requireNamespace("yaml", quietly = TRUE))
   stop("yaml package needed to read in calibration for the pollock data set")
 
 # reading in matlab file with stereo calibration parameters
-cal <- yaml.load(read_yaml("data-raw/example_calibration_frommatlab.yml"))
+cal <- yaml.load(read_yaml("calibrations/example_calibration_frommatlab.yml"))
 
 ######################################################################
 #  TARGET DETECTION FUNCTION ############

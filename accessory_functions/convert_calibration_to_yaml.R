@@ -14,7 +14,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera1$Extrinsic$T=list(t1=0,t2=0,t3=0)
 
     Camera1$Intrinsic=list()
-    Camera1$Intrinsic$focal_point=list(h=Calraw$fc.left[1],v=Calraw$fc.left[2])
+    Camera1$Intrinsic$focal_length=list(h=Calraw$fc.left[1],v=Calraw$fc.left[2])
     Camera1$Intrinsic$principal_point=list(h=Calraw$cc.left[1],v=Calraw$cc.left[2])
     Camera1$Intrinsic$image_size=list(width=Calraw$image.size.left[1],height=Calraw$image.size.left[2])
     Camera1$Intrinsic$radial_distortion=list(k1=Calraw$kc.left[1],k2=Calraw$kc.left[2],k3=Calraw$kc.left[5])
@@ -28,7 +28,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera2$Extrinsic$T=list(t1=Calraw$T[1],t2=Calraw$T[2],t3=Calraw$T[3])
 
     Camera2$Intrinsic=list()
-    Camera2$Intrinsic$focal_point=list(h=Calraw$fc.right[1],v=Calraw$fc.right[2])
+    Camera2$Intrinsic$focal_length=list(h=Calraw$fc.right[1],v=Calraw$fc.right[2])
     Camera2$Intrinsic$principal_point=list(h=Calraw$cc.right[1],v=Calraw$cc.right[2])
     Camera2$Intrinsic$image_size=list(width=Calraw$image.size.right[1],height=Calraw$image.size.right[2])
     Camera2$Intrinsic$radial_distortion=list(k1=Calraw$kc.right[1],k2=Calraw$kc.right[2],k3=Calraw$kc.right[5])
@@ -65,7 +65,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera1$Intrinsic=list()
     fl_x=as.numeric(left_file_data$Data[which(left_file_data$Name=="Focal length")])/as.numeric(left_file_data$Data[which(left_file_data$Name=="X Pixel size")])
     fl_y=as.numeric(left_file_data$Data[which(left_file_data$Name=="Focal length")])/as.numeric(left_file_data$Data[which(left_file_data$Name=="Y Pixel size")])
-    Camera1$Intrinsic$focal_point=list(h=fl_x,v=fl_y)
+    Camera1$Intrinsic$focal_length=list(h=fl_x,v=fl_y)
     pp_x=as.numeric(left_file_data$Data[which(left_file_data$Name=="Image columns")])/2+as.numeric(left_file_data$Data[which(left_file_data$Name=="X PP Offset")])/as.numeric(left_file_data$Data[which(left_file_data$Name=="X Pixel size")])
     pp_y=as.numeric(left_file_data$Data[which(left_file_data$Name=="Image rows")])/2+as.numeric(left_file_data$Data[which(left_file_data$Name=="Y PP Offset")])/as.numeric(left_file_data$Data[which(left_file_data$Name=="Y Pixel size")])
     Camera1$Intrinsic$principal_point=list(h=pp_x,v=pp_y)
@@ -102,7 +102,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera2$Intrinsic=list()
     fl_x=as.numeric(right_file_data$Data[which(right_file_data$Name=="Focal length")])/as.numeric(right_file_data$Data[which(right_file_data$Name=="X Pixel size")])
     fl_y=as.numeric(right_file_data$Data[which(right_file_data$Name=="Focal length")])/as.numeric(right_file_data$Data[which(right_file_data$Name=="Y Pixel size")])
-    Camera2$Intrinsic$focal_point=list(h=fl_x,v=fl_y)
+    Camera2$Intrinsic$focal_length=list(h=fl_x,v=fl_y)
     pp_x=as.numeric(right_file_data$Data[which(right_file_data$Name=="Image columns")])/2+as.numeric(right_file_data$Data[which(right_file_data$Name=="X PP Offset")])/as.numeric(right_file_data$Data[which(right_file_data$Name=="X Pixel size")])
     pp_y=as.numeric(right_file_data$Data[which(right_file_data$Name=="Image rows")])/2+as.numeric(right_file_data$Data[which(right_file_data$Name=="Y PP Offset")])/as.numeric(right_file_data$Data[which(right_file_data$Name=="Y Pixel size")])
     Camera2$Intrinsic$principal_point=list(h=pp_x,v=pp_y)
@@ -140,7 +140,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera1$Extrinsic$T=list(t1=0,t2=0,t3=0)
 
     Camera1$Intrinsic=list()
-    Camera1$Intrinsic$focal_point=list(h=C1Matrix[1,1],v=C1Matrix[2,2])
+    Camera1$Intrinsic$focal_length=list(h=C1Matrix[1,1],v=C1Matrix[2,2])
     Camera1$Intrinsic$principal_point=list(h=C1Matrix[1,3],v=C1Matrix[2,3])
     Camera1$Intrinsic$image_size=list(width=C1imgSize[1],height=C1imgSize[2])
     Camera1$Intrinsic$radial_distortion=list(k1=C1distCoeffs[1,1],k2=C1distCoeffs[1,2],k3=C1distCoeffs[1,5])
@@ -154,7 +154,7 @@ readCalibration = function(filename,method='matlab_caltech'){
     Camera2$Extrinsic$T=list(t1=C2T[1],t2=C2T[2],t3=C2T[3])
 
     Camera2$Intrinsic=list()
-    Camera2$Intrinsic$focal_point=list(h=C2Matrix[1,1],v=C2Matrix[2,2])
+    Camera2$Intrinsic$focal_length=list(h=C2Matrix[1,1],v=C2Matrix[2,2])
     Camera2$Intrinsic$principal_point=list(h=C2Matrix[1,3],v=C2Matrix[2,3])
     Camera2$Intrinsic$image_size=list(width=C2imgSize[1],height=C2imgSize[2])
     Camera2$Intrinsic$radial_distortion=list(k1=C2distCoeffs[1,1],k2=C2distCoeffs[1,2],k3=C2distCoeffs[1,5])
@@ -168,14 +168,18 @@ readCalibration = function(filename,method='matlab_caltech'){
 }
 
 
-Cal=readCalibration('accessory_functions/example_calibrations/matlab_caltech_example.mat','matlab_caltech')
-z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
-write_yaml(z,'calibrations/example_calibration_frommatlab.yml')
+# Cal=readCalibration('accessory_functions/example_calibrations/matlab_caltech_example2.mat','matlab_caltech')
+# z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
+# write_yaml(z,'calibrations/example_calibration_frommatlab2.yml')
 
-Cal=readCalibration(list('accessory_functions/example_calibrations/seagis_cal_example_Left.TXT','accessory_functions/example_calibrations/seagis_cal_example_Right.TXT'),'seagis')
-z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
-write_yaml(z,'calibrations/example_calibration_fromseagis.yml')
+# Cal=readCalibration(list('accessory_functions/example_calibrations/seagis_cal_example_Left.TXT','accessory_functions/example_calibrations/seagis_cal_example_Right.TXT'),'seagis')
+# z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
+# write_yaml(z,'calibrations/example_calibration_fromseagis.yml')
 
 # Cal=readCalibration('accessory_functions/example_calibrations/opencv_example.npz','opencv')
 # z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
 # write_yaml(z,'calibrations/example_calibration_fromopencv.yml')
+
+Cal=readCalibration('C:/Users/kresimir.williams/Work/volumetric desity estimation/calibration_comparison/matlab/AFSC_2014/Paired/AFSC_2014_regcal.mat','matlab_caltech')
+z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
+write_yaml(z,'C:/Users/kresimir.williams/Work/volumetric desity estimation/calibration_comparison/matlab/AFSC_2014/Paired/AFSC_2014_regcal.yml')

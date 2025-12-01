@@ -70,16 +70,16 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
 fit_density_function = function(density_data,
                                 method=c('logistic glm','logistic gam'),
                                 formula=NULL,
-                                dostepAIC=TRUE,
+#                                dostepAIC=TRUE,
                                 plotting=FALSE){
   method <- match.arg(method)
   # do the binning bit
   if (method=='logistic glm'){
     if(is.null(formula))
-      formula <- cbind(obs_count, exp_count - obs_count) ~ range + I(range^2) + I(range^3) +I(range^4)
+      formula <- cbind(obs_count, exp_count - obs_count) ~ range# + I(range^2) + I(range^3) +I(range^4)
     out <- glm(formula = formula, data = density_data,
                family = binomial(link="logit"))
-      if(dostepAIC) out <- step(out)
+      # if(dostepAIC) out <- step(out)
 
   } else if(method=='logistic gam'){
     formula <- cbind(obs_count, exp_count - obs_count) ~ s(range)
@@ -91,7 +91,7 @@ fit_density_function = function(density_data,
   predict(out, newdata=data.frame(range=range), type='response')
 }
   if (plotting){
-    plot(density_data$range,density_data$obs_count/density_data$exp_count,xlab='range from camera (m)',ylab='probability of detection')
+    plot(density_data$range,density_data$obs_count/density_data$exp_count,main = method,xlab='range from camera (m)',ylab='probability of detection')
     x=seq(0, max(density_data$range),length.out=100)
     y=detect.function(x)
     lines(x,y,col="red")

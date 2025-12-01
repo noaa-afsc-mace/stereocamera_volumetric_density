@@ -18,12 +18,11 @@ detection_data=prep_detection_data(target_ranges=jellyfish$targets$RANGE,
  detection_data$obs_count <- round(detection_data$obs_count)
 
 # fit detection function
-out <- fit_density_function(detection_data,method='logistic glm',plotting=TRUE)
-out <- fit_density_function(detection_data,method='logistic gam',plotting=TRUE,
-                            dostepAIC=FALSE)
-out
-plot(out$model)
-out$detect.function((1:10)/5)
+out <- fit_density_function(detection_data,method='logistic glm',plotting=FALSE)
+
+
+
+out$detect.function((1:15))
 
 
 

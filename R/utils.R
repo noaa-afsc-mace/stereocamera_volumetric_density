@@ -3,6 +3,15 @@
 #' @export
 dummy <- function(x) x
 
+#' @param x input for range from camera in m
+#' @param f_vol function that defines change in volume with range from camera
+#' @param f_detect function that defines probability of detection with range from camera
+#' @export
+# define effective volume function
+eff_vol_func<- function(x, f_vol, f_detect){
+  f_vol(x)*f_detect(x)
+}
+
 #' Bin the data for fitting the model.  This involves
 #' estimation the volume for each range bin as well as how many
 #' animals are in the bin. The resulting density is used to estimate steady state local density, which is then used to compute the number
@@ -60,7 +69,7 @@ bootstrap_effective_volume <- function(target_ranges, vol_func, nbins=25, method
   if (plotting){
     # get basic data for plotting
     detection_data=prep_detection_data(target_ranges=target_ranges,
-                                       vol_func=vol$vol_func, nbins=nbins, method=method, nvals=nvals, loc_dens=mean(loc_dens_vec), plotting=FALSE)
+                                       vol_func=vol$vol_func, nbins=nbins, method=method, nvals=nvals, loc_dens=NULL, plotting=FALSE)
 
     out <- fit_density_function(detection_data,method=model_method,formula=formula, dostepAIC=FALSE, plotting=TRUE)
     #plot(detection_data$range,detection_data$obs_count/detection_data$exp_count)

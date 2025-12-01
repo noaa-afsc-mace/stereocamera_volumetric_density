@@ -8,7 +8,6 @@ fit_density_function(
   density_data,
   method = c("logistic glm", "logistic gam"),
   formula = NULL,
-  dostepAIC = TRUE,
   plotting = FALSE
 )
 }

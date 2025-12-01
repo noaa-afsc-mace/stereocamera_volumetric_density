@@ -4,7 +4,13 @@
 \alias{get_vol_func}
 \title{Get volume function (change in joint imaging volume with range) from a calibration.}
 \usage{
-get_vol_func(Cal, max_extent = 8, grid_size = 0.1, plotting = FALSE)
+get_vol_func(
+  Cal,
+  max_extent = 8,
+  grid_size = 0.1,
+  plotting = FALSE,
+  units = "m"
+)
 }
 \arguments{
 \item{max_extent}{distance in m determining range extent of volume field.}

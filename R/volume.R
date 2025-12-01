@@ -7,13 +7,22 @@
 #' @references Bouget (2008) Camera calibration toolbox for Matlab. Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
 #' @details to do
 #' @export
-get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
+get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units='m'){
   # code below is adopted from the camera calibration toolbox
   #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
   # cited as Bouguet, J.Y., 2008. Camera calibration toolbox for Matlab [online]. [Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
   # Calibration (Cal) should be a list of lists from reading in standard yml file
   # this code sets up the view "cones"
-  normT=max_extent*1000 # extent of visual field in mm
+  if (units=='m'){
+    scaling=1000
+    xlab='range from camera (dm)'
+
+  }
+  else if (units=='L'){
+    scaling=100
+    xlab='range from camera (dm)'
+  }
+  normT=max_extent*scaling # extent of visual field in mm
 
   BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
                        t(matrix(c(1/Cal$Camera1$Intrinsic$focal_point$h, 0, 0, 0, 1/Cal$Camera1$Intrinsic$focal_point$v, 0, 0, 0, 1),3,3)) %*%
@@ -42,13 +51,13 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
   IP_right=IP_right[,c(1,2,4,4,5,7,7,8,10,10,11,13,1,4,7,10)]
 
   #originally this is for a down facing camera, so we flip the z and y axes, and reverse the direction of the z axis.  Also, change from mm to m
-  xl=IP_left[1,]/1000
-  yl=IP_left[3,]/1000
-  zl=-IP_left[2,]/1000
+  xl=IP_left[1,]/scaling
+  yl=IP_left[3,]/scaling
+  zl=-IP_left[2,]/scaling
 
-  xr=IP_right[1,]/1000
-  yr=IP_right[3,]/1000
-  zr=-IP_right[2,]/1000
+  xr=IP_right[1,]/scaling
+  yr=IP_right[3,]/scaling
+  zr=-IP_right[2,]/scaling
 
   # generate grid points
   # making sure we envelop the entire view cones with points
@@ -72,7 +81,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
   # pixel projection method
   #adopted from https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
   #left projection (impose translation/rotation, although for matlab / opencv this doesn't change values
-  grid_nat_rot=t(RmatLeft %*% t(grid_nat)+matrix(TmatLeft/1000,3, nrow(grid_nat)))
+  grid_nat_rot=t(RmatLeft %*% t(grid_nat)+matrix(TmatLeft/scaling,3, nrow(grid_nat)))
   xp=grid_nat_rot[,1]/grid_nat_rot[,3]
   yp=grid_nat_rot[,2]/grid_nat_rot[,3]
   r=sqrt(xp^2+yp^2)
@@ -85,7 +94,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
   grid_left=grid_nat[in_left,]
 
   #right projection (impose translation/rotation)
-  grid_left_rot=t(RmatRight %*% t(grid_left)+matrix(TmatRight/1000,3, nrow(grid_left)))
+  grid_left_rot=t(RmatRight %*% t(grid_left)+matrix(TmatRight/scaling,3, nrow(grid_left)))
   xp=grid_left_rot[,1]/grid_left_rot[,3]
   yp=grid_left_rot[,2]/grid_left_rot[,3]
   r=sqrt(xp^2+yp^2)
@@ -121,7 +130,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE){
 
   # plot if asked to
   if (plotting){
-    plot(range_centers,vol,xlab='range from camera (m)',ylab='change in volume')
+    plot(range_centers,vol,xlab=xlab,ylab='change in volume')
     x=seq(0, max(range_centers),length.out=100)
     y=vol_func(x)
     lines(x,y,col="red")
