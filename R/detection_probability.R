@@ -23,7 +23,7 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
     bin_mids=bin_edges[1:nbins]+(bin_edges[2]-bin_edges[1])/2
 
 
-  vol=numeric(length=length(bin_mids))
+  volume=numeric(length=length(bin_mids))
   bin_counts=numeric(length=length(bin_mids))
   for (i in 1:length(bin_mids)){
     # this is integrating how much volume is in each bin to get to density
@@ -32,7 +32,7 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
     ind=which(target_ranges>bin_edges[i] & target_ranges<=bin_edges[i+1])
     bin_counts[i]=length(ind)
   }
-  dens=bin_counts/vol
+  dens=bin_counts/volume
   # determine the local_density
   if (is.null(loc_dens)){# user didn't specify
     sort_dens=sort(dens,decreasing=TRUE)

@@ -59,6 +59,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   yr=IP_right[3,]/scaling
   zr=-IP_right[2,]/scaling
 
+
   # generate grid points
   # making sure we envelop the entire view cones with points
   xg_vec=seq(floor(min(c(xl,xr))*10)/10,ceiling(max(c(xl,xr))*10)/10,by=grid_size)
@@ -78,32 +79,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   grid_full=matrix(c(grid_frame$x,grid_frame$y,grid_frame$z),length(grid_frame$z),3)
   # revret to original down facing view cone. Here the y axis is up-down.
   grid_nat=matrix(c(grid_frame$x,-grid_frame$z,grid_frame$y),length(grid_frame$z),3)
-  # pixel projection method
-  #adopted from https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
-  #left projection (impose translation/rotation, although for matlab / opencv this doesn't change values
-  grid_nat_rot=t(RmatLeft %*% t(grid_nat)+matrix(TmatLeft/scaling,3, nrow(grid_nat)))
-  xp=grid_nat_rot[,1]/grid_nat_rot[,3]
-  yp=grid_nat_rot[,2]/grid_nat_rot[,3]
-  r=sqrt(xp^2+yp^2)
-  xf=xp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p1+Cal$Camera1$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
-  yf=yp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p2+Cal$Camera1$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
-  u=Cal$Camera1$Intrinsic$focal_point$h*xf+Cal$Camera1$Intrinsic$principal_point$h
-  v=Cal$Camera1$Intrinsic$focal_point$v*yf+Cal$Camera1$Intrinsic$principal_point$v
-  in_left=which(u>0 & u<Cal$Camera1$Intrinsic$image_size$width & v>0 & v<Cal$Camera1$Intrinsic$image_size$height)
-  # points3D(grid_nat[in_left,1],grid_nat[in_left,3],-grid_nat[in_left,2],col="blue")
-  grid_left=grid_nat[in_left,]
-
-  #right projection (impose translation/rotation)
-  grid_left_rot=t(RmatRight %*% t(grid_left)+matrix(TmatRight/scaling,3, nrow(grid_left)))
-  xp=grid_left_rot[,1]/grid_left_rot[,3]
-  yp=grid_left_rot[,2]/grid_left_rot[,3]
-  r=sqrt(xp^2+yp^2)
-  xf=xp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p1+Cal$Camera2$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
-  yf=yp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p2+Cal$Camera2$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
-  u=Cal$Camera2$Intrinsic$focal_point$h*xf+Cal$Camera2$Intrinsic$principal_point$h
-  v=Cal$Camera2$Intrinsic$focal_point$v*yf+Cal$Camera2$Intrinsic$principal_point$v
-  in_right=which(u>0 & u<Cal$Camera2$Intrinsic$image_size$width & v>0 & v<Cal$Camera2$Intrinsic$image_size$height)
-  grid_both=grid_left[in_right,]
+  grid_both=find_targets_in_view(Cal,scaling, grid_nat)
   # points3D(grid_both[,1],grid_both[,3],-grid_both[,2],col="red")
 
 
@@ -137,4 +113,46 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   }
 
   return(list(vol_func=vol_func, p_vol=p_vol, vol=vol, range_centers=range_centers))
+}
+
+
+#' @param cal A yaml file (full path) from which to read the calibration values.
+#' @param target_positions 3d coordinates in appropriate units.
+#' @param scaling this relates calibbration units to real world.
+#' @return target positions within both viewing cones
+#' @references Williams, K., Rooper, C.N., De Robertis, A., Levine, M. and Towler, R., 2018. A method for computing volumetric fish density using stereo cameras. Journal of Experimental Marine Biology and Ecology, 508, pp.21-26.
+#' @details to do
+#' @export
+find_targets_in_view <- function(Cal, scaling, target_positions){
+  RmatLeft=t(matrix(c(Cal$Camera1$Extrinsic$R$r1c1,Cal$Camera1$Extrinsic$R$r2c1,Cal$Camera1$Extrinsic$R$r3c1,Cal$Camera1$Extrinsic$R$r1c2,Cal$Camera1$Extrinsic$R$r2c2,Cal$Camera1$Extrinsic$R$r3c2,Cal$Camera1$Extrinsic$R$r1c3,Cal$Camera1$Extrinsic$R$r2c3,Cal$Camera1$Extrinsic$R$r3c3),3,3))
+  TmatLeft=matrix(c(Cal$Camera1$Extrinsic$T$t1, Cal$Camera1$Extrinsic$T$t2, Cal$Camera1$Extrinsic$T$t3),3,1)
+  RmatRight=t(matrix(c(Cal$Camera2$Extrinsic$R$r1c1,Cal$Camera2$Extrinsic$R$r2c1,Cal$Camera2$Extrinsic$R$r3c1,Cal$Camera2$Extrinsic$R$r1c2,Cal$Camera2$Extrinsic$R$r2c2,Cal$Camera2$Extrinsic$R$r3c2,Cal$Camera2$Extrinsic$R$r1c3,Cal$Camera2$Extrinsic$R$r2c3,Cal$Camera2$Extrinsic$R$r3c3),3,3))
+  TmatRight=matrix(c(Cal$Camera2$Extrinsic$T$t1, Cal$Camera2$Extrinsic$T$t2, Cal$Camera2$Extrinsic$T$t3),3,1)
+  # pixel projection method
+  #adopted from https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
+  #left projection (impose translation/rotation, although for matlab / opencv this doesn't change values
+  target_positions=t(RmatLeft %*% t(target_positions)+matrix(TmatLeft/scaling,3, nrow(target_positions)))
+  xp=target_positions[,1]/target_positions[,3]
+  yp=target_positions[,2]/target_positions[,3]
+  r=sqrt(xp^2+yp^2)
+  xf=xp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p1+Cal$Camera1$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
+  yf=yp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p2+Cal$Camera1$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
+  u=Cal$Camera1$Intrinsic$focal_point$h*xf+Cal$Camera1$Intrinsic$principal_point$h
+  v=Cal$Camera1$Intrinsic$focal_point$v*yf+Cal$Camera1$Intrinsic$principal_point$v
+  in_left=which(u>0 & u<Cal$Camera1$Intrinsic$image_size$width & v>0 & v<Cal$Camera1$Intrinsic$image_size$height)
+  target_positions_left=target_positions[in_left,]
+
+  #right projection (impose translation/rotation)
+  grid_left_rot=t(RmatRight %*% t(target_positions_left)+matrix(TmatRight/scaling,3, nrow(target_positions_left)))
+  xp=grid_left_rot[,1]/grid_left_rot[,3]
+  yp=grid_left_rot[,2]/grid_left_rot[,3]
+  r=sqrt(xp^2+yp^2)
+  xf=xp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p1+Cal$Camera2$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
+  yf=yp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p2+Cal$Camera2$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
+  u=Cal$Camera2$Intrinsic$focal_point$h*xf+Cal$Camera2$Intrinsic$principal_point$h
+  v=Cal$Camera2$Intrinsic$focal_point$v*yf+Cal$Camera2$Intrinsic$principal_point$v
+  in_right=which(u>0 & u<Cal$Camera2$Intrinsic$image_size$width & v>0 & v<Cal$Camera2$Intrinsic$image_size$height)
+  target_positions_both=target_positions_left[in_right,]
+  return(target_positions_both)
+
 }
