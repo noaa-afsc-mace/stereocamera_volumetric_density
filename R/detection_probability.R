@@ -28,7 +28,7 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
   for (i in 1:length(bin_mids)){
     # this is integrating how much volume is in each bin to get to density
     v=integrate(vol_func,lower = bin_edges[i], upper = bin_edges[i+1])
-    vol[i]=v$value
+    volume[i]=v$value
     ind=which(target_ranges>bin_edges[i] & target_ranges<=bin_edges[i+1])
     bin_counts[i]=length(ind)
   }
@@ -48,7 +48,7 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
            col="red", lty=2, cex=0.8)
   }
   # generate expected count per range interval
-  exp_count=loc_dens*vol
+  exp_count=loc_dens*volume
   # create data frame
   density_data=data.frame(range=bin_mids,dens,exp_count,obs_count=bin_counts)
   # implement constraint for max observed value
