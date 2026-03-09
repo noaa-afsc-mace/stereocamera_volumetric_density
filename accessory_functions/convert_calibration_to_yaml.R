@@ -180,6 +180,6 @@ readCalibration = function(filename,method='matlab_caltech'){
 # z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
 # write_yaml(z,'calibrations/example_calibration_fromopencv.yml')
 
-Cal=readCalibration('C:/Users/kresimir.williams/Work/volumetric desity estimation/calibration_comparison/matlab/AFSC_2014/Paired/AFSC_2014_regcal.mat','matlab_caltech')
+Cal=readCalibration('C:/Users/kresimir.williams/Work/volumetric desity estimation/matlab/Pelagicam/2023/trigcam_2019_unit_3.mat','matlab_caltech')
 z <- as.yaml(list(Camera1=Cal$Camera1,Camera2=Cal$Camera2))
-write_yaml(z,'C:/Users/kresimir.williams/Work/volumetric desity estimation/calibration_comparison/matlab/AFSC_2014/Paired/AFSC_2014_regcal.yml')
+write_yaml(z,'calibrations/example_calibration_frommatlab3.yml')

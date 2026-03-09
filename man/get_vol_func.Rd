@@ -9,7 +9,8 @@ get_vol_func(
   max_extent = 8,
   grid_size = 0.1,
   plotting = FALSE,
-  units = "m"
+  units = "m3",
+  seafloor_position = c(NA, NA, NA)
 )
 }
 \arguments{
@@ -18,6 +19,10 @@ get_vol_func(
 \item{grid_size}{grid spacing in m determining the density of the point cloud.}
 
 \item{plotting}{boolean flag to indicate whether to make plots}
+
+\item{units}{this parameter sets the general volumetric units of the analysis (cubic meters ("m3") for larger systems, or liter ("l") for smaller ones)}
+
+\item{seafloor_position}{a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane}
 
 \item{cal}{A yaml file (full path) from which to read the calibration values.}
 }

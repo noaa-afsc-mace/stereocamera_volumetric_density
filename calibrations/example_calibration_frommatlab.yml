@@ -23,8 +23,8 @@
         h: 992.1219792
         v: 733.8031522
       image_size:
-        width: 1536.0
-        height: 2048.0
+        width: 2048.0
+        height: 1536.0
       radial_distortion:
         k1: -0.0489446
         k2: 0.0802278
@@ -56,8 +56,8 @@
         h: 1047.3874327
         v: 778.4430966
       image_size:
-        width: 1536.0
-        height: 2048.0
+        width: 2048.0
+        height: 1536.0
       radial_distortion:
         k1: -0.0562267
         k2: 0.2190325

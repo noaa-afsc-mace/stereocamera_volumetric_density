@@ -3,29 +3,31 @@
 #' @param max_extent distance in m determining range extent of volume field.
 #' @param grid_size grid spacing in m determining the density of the point cloud.
 #' @param plotting boolean flag to indicate whether to make plots
+#' @param units this parameter sets the general volumetric units of the analysis (cubic meters ("m3") for larger systems, or liter ("l") for smaller ones)
+#' @param seafloor_position a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane
 #' @return A list containing the function vol_func and a vector of coefficients p_vol
 #' @references Bouget (2008) Camera calibration toolbox for Matlab. Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
 #' @details to do
 #' @export
-get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units='m'){
+get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units='m3', seafloor_position=c(NA,NA,NA)){
   # code below is adopted from the camera calibration toolbox
   #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
   # cited as Bouguet, J.Y., 2008. Camera calibration toolbox for Matlab [online]. [Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
   # Calibration (Cal) should be a list of lists from reading in standard yml file
   # this code sets up the view "cones"
-  if (units=='m'){
+  if (units=='m3'){
     scaling=1000
-    xlab='range from camera (dm)'
+    xlab='range from camera (m)'
 
   }
-  else if (units=='L'){
+  else if (units=='l'){
     scaling=100
     xlab='range from camera (dm)'
   }
   normT=max_extent*scaling # extent of visual field in mm
 
   BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
-                       t(matrix(c(1/Cal$Camera1$Intrinsic$focal_point$h, 0, 0, 0, 1/Cal$Camera1$Intrinsic$focal_point$v, 0, 0, 0, 1),3,3)) %*%
+                       t(matrix(c(1/Cal$Camera1$Intrinsic$focal_length$h, 0, 0, 0, 1/Cal$Camera1$Intrinsic$focal_length$v, 0, 0, 0, 1),3,3)) %*%
                        t(matrix(c(1, 0, -Cal$Camera1$Intrinsic$principal_point$h, 0, 1, -Cal$Camera1$Intrinsic$principal_point$v, 0, 0, 1),3,3)) %*%
                        t(matrix(c(0, Cal$Camera1$Intrinsic$image_size$width-1, Cal$Camera1$Intrinsic$image_size$width-1, 0, 0, 0, 0, Cal$Camera1$Intrinsic$image_size$height-1, Cal$Camera1$Intrinsic$image_size$height-1, 0, 1, 1, 1, 1, 1),5,3)))
   IP_left  = matrix(rbind(BASE_left,matrix(0,3,5),BASE_left),3,15)
@@ -36,7 +38,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   IP_left = RmatLeft %*% (IP_left - matrix(TmatLeft,3, 15))
 
   BASE_right = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
-                        t(matrix(c(1/Cal$Camera2$Intrinsic$focal_point$h, 0, 0, 0, 1/Cal$Camera2$Intrinsic$focal_point$v, 0, 0, 0, 1),3,3)) %*%
+                        t(matrix(c(1/Cal$Camera2$Intrinsic$focal_length$h, 0, 0, 0, 1/Cal$Camera2$Intrinsic$focal_length$v, 0, 0, 0, 1),3,3)) %*%
                         t(matrix(c(1, 0, -Cal$Camera2$Intrinsic$principal_point$h, 0, 1, -Cal$Camera2$Intrinsic$principal_point$v, 0, 0, 1),3,3)) %*%
                         t(matrix(c(0, Cal$Camera2$Intrinsic$image_size$width-1, Cal$Camera2$Intrinsic$image_size$width-1, 0, 0, 0, 0, Cal$Camera2$Intrinsic$image_size$height-1, Cal$Camera2$Intrinsic$image_size$height-1, 0, 1, 1, 1, 1, 1),5,3)))
   IP_right  = matrix(rbind(BASE_right,matrix(0,3,5),BASE_right),3,15)
@@ -80,7 +82,36 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   # revret to original down facing view cone. Here the y axis is up-down.
   grid_nat=matrix(c(grid_frame$x,-grid_frame$z,grid_frame$y),length(grid_frame$z),3)
   grid_both=find_targets_in_view(Cal,scaling, grid_nat)
-  # points3D(grid_both[,1],grid_both[,3],-grid_both[,2],col="red")
+  # now revert us back to the natural axis orientation
+  grid_both=matrix(c(grid_both[,1],grid_both[,3],-grid_both[,2]),length(grid_both[,1]),3)
+
+  if (!is.na(seafloor_position[1])) {
+    # here we want to rotate grid and remove points that are sub surface
+    a=-seafloor_position[1]*pi/180 # tilt in radians
+    b=-seafloor_position[2]*pi/180 # roll in radians
+    g=0 #  yaw not implemented
+    # assemble rotation matrix
+    Rot=matrix(data=c(cos(a)*cos(g),
+                      cos(g)*sin(a)*sin(b)-sin(g)*cos(a),
+                      cos(a)*sin(b)*cos(g)+sin(a)*sin(g),
+                      sin(g)*cos(b),
+                      sin(a)*sin(b)*sin(g)+cos(a)*cos(g),
+                      sin(a)*sin(b)*cos(g)-cos(g)*sin(a),
+                      -sin(b),
+                      cos(b)*sin(a),
+                      cos(a)*cos(b)),nrow=3,ncol=3,byrow=TRUE)
+
+    k=t(grid_both)
+    grid_both_rot=t(Rot%*%k)# rotate point grid
+    grid_both_rot[,3]=grid_both_rot[,3]+seafloor_position[3]# change Z to account fro camera height
+    grid_both_rot=grid_both_rot[which(grid_both_rot[,3]>0),]# keep points above sea floor (e.g. positive points)
+    #eqscplot(grid_both_rot[,2],grid_both_rot[,3],pch = 16,col="red")
+    grid_both_rot[,3]=grid_both_rot[,3]-seafloor_position[3]
+    k=t(grid_both_rot)
+    Rotinv=solve(Rot)
+    grid_both=t(Rotinv%*%k)
+    # eqscplot(grid_both_back[,1],grid_both_back[,3],pch = 16,col="green")
+  }
 
 
   # now to figure out the "change in volume" function
@@ -137,8 +168,8 @@ find_targets_in_view <- function(Cal, scaling, target_positions){
   r=sqrt(xp^2+yp^2)
   xf=xp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p1+Cal$Camera1$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
   yf=yp*(1+Cal$Camera1$Intrinsic$radial_distortion$k1*r^2+Cal$Camera1$Intrinsic$radial_distortion$k2*r^4+Cal$Camera1$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera1$Intrinsic$tangential_distortion$p2+Cal$Camera1$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
-  u=Cal$Camera1$Intrinsic$focal_point$h*xf+Cal$Camera1$Intrinsic$principal_point$h
-  v=Cal$Camera1$Intrinsic$focal_point$v*yf+Cal$Camera1$Intrinsic$principal_point$v
+  u=Cal$Camera1$Intrinsic$focal_length$h*xf+Cal$Camera1$Intrinsic$principal_point$h
+  v=Cal$Camera1$Intrinsic$focal_length$v*yf+Cal$Camera1$Intrinsic$principal_point$v
   in_left=which(u>0 & u<Cal$Camera1$Intrinsic$image_size$width & v>0 & v<Cal$Camera1$Intrinsic$image_size$height)
   target_positions_left=target_positions[in_left,]
 
@@ -149,8 +180,8 @@ find_targets_in_view <- function(Cal, scaling, target_positions){
   r=sqrt(xp^2+yp^2)
   xf=xp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p1+Cal$Camera2$Intrinsic$tangential_distortion$p2*(r^2+2*xp^2)
   yf=yp*(1+Cal$Camera2$Intrinsic$radial_distortion$k1*r^2+Cal$Camera2$Intrinsic$radial_distortion$k2*r^4+Cal$Camera2$Intrinsic$radial_distortion$k3*r^6)+2*xp*yp*+Cal$Camera2$Intrinsic$tangential_distortion$p2+Cal$Camera2$Intrinsic$tangential_distortion$p1*(r^2+2*yp^2)
-  u=Cal$Camera2$Intrinsic$focal_point$h*xf+Cal$Camera2$Intrinsic$principal_point$h
-  v=Cal$Camera2$Intrinsic$focal_point$v*yf+Cal$Camera2$Intrinsic$principal_point$v
+  u=Cal$Camera2$Intrinsic$focal_length$h*xf+Cal$Camera2$Intrinsic$principal_point$h
+  v=Cal$Camera2$Intrinsic$focal_length$v*yf+Cal$Camera2$Intrinsic$principal_point$v
   in_right=which(u>0 & u<Cal$Camera2$Intrinsic$image_size$width & v>0 & v<Cal$Camera2$Intrinsic$image_size$height)
   target_positions_both=target_positions_left[in_right,]
   return(target_positions_both)

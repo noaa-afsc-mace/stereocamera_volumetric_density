@@ -5,27 +5,27 @@ library(plot3D)
 library(ptinpoly)
 
 # reading in matlab file with stereo calibration parameters
-matcal <- readMat("volume_estimation//minicam_09262023_cal_sebastes.mat")
+matcal <- readMat("minicam_09262023_cal_sebastes.mat")
 
 
-# code below is adopted from the camera calibration toolbox 
+# code below is adopted from the camera calibration toolbox
 #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
 # cited as Bouguet, J.Y., 2008. Camera calibration toolbox for Matlab [online]. [Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
 
-# this code sets up the view "cones"  
-# we use this to figure out which points in space are visible to the camera 
+# this code sets up the view "cones"
+# we use this to figure out which points in space are visible to the camera
 normT=8000 # extent of visual field in mm
 im_dim=c(2048,1536)
 
-BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*% 
-                     t(matrix(c(1/matcal$fc.left[1], 0, 0, 0, 1/matcal$fc.left[1], 0, 0, 0, 1),3,3)) %*% 
-                     t(matrix(c(1, 0, -matcal$cc.left[1], 0, 1, -matcal$cc.left[2], 0, 0, 1),3,3)) %*% 
+BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
+                     t(matrix(c(1/matcal$fc.left[1], 0, 0, 0, 1/matcal$fc.left[2], 0, 0, 0, 1),3,3)) %*%
+                     t(matrix(c(1, 0, -matcal$cc.left[1], 0, 1, -matcal$cc.left[2], 0, 0, 1),3,3)) %*%
                      t(matrix(c(0, im_dim[1]-1, im_dim[1]-1, 0, 0, 0, 0, im_dim[2]-1, im_dim[2]-1, 0, 1, 1, 1, 1, 1),5,3)))
 IP_left  = matrix(rbind(BASE_left,matrix(0,3,5),BASE_left),3,15)
 
-BASE_right = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*% 
-                      t(matrix(c(1/matcal$fc.right[1], 0, 0, 0, 1/matcal$fc.right[1], 0, 0, 0, 1),3,3)) %*% 
-                      t(matrix(c(1, 0, -matcal$cc.right[1], 0, 1, -matcal$cc.right[2], 0, 0, 1),3,3)) %*% 
+BASE_right = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
+                      t(matrix(c(1/matcal$fc.right[1], 0, 0, 0, 1/matcal$fc.right[2], 0, 0, 0, 1),3,3)) %*%
+                      t(matrix(c(1, 0, -matcal$cc.right[1], 0, 1, -matcal$cc.right[2], 0, 0, 1),3,3)) %*%
                       t(matrix(c(0, im_dim[1]-1, im_dim[1]-1, 0, 0, 0, 0, im_dim[2]-1, im_dim[2]-1, 0, 1, 1, 1, 1, 1),5,3)))
 IP_right  = matrix(rbind(BASE_right,matrix(0,3,5),BASE_right),3,15)
 IP_right = matcal$R %*% (IP_right - matrix(matcal$T,3, 15))
@@ -48,7 +48,7 @@ lines3D(xl,yl,zl,xlab = "x (m)", ylab = "y (m)", zlab = "z (m)", col="red",tickt
 lines3D(xr,yr,zr, col="green",add = TRUE)
 
 # generate grid points
-sc=0.1
+sc=0.5
 # making sure we envelop the entire view cones with points
 xg_vec=seq(floor(min(c(xl,xr))*10)/10,ceiling(max(c(xl,xr))*10)/10,by=sc)
 yg_vec=seq(floor(min(c(yl,yr))*10)/10,ceiling(max(c(yl,yr))*10)/10,by=sc)
@@ -70,12 +70,14 @@ verts_right=pos_r[c(1,9,2,3,6),]
 pts_in_right=pip3d(verts_right,faces,grid_left)
 in_right=which(pts_in_right==1)
 grid_both=grid_left[in_right,]
+
+eqscplot(grid_both[,2],grid_both[,3],pch = 16,col="red")
 # now to figure out the "change in volume" function
 range_bins=seq(0.5,7.5,by=1)# these are the boundaries - only going out to 13 m as there are edge effects
 grid_pt_ranges=sqrt(grid_both[,1]^2+grid_both[,2]^2+grid_both[,3]^2)# euclidean distance to origin (left camera)
 vol=vector(mode="numeric",length=7)
 v_pt=sc^3
-# The key here is that the bin width is equivalent to the unit, (e.g. 1 m).  
+# The key here is that the bin width is equivalent to the unit, (e.g. 1 m).
 # This gives us the change function.
 for (i in 1:7){
   # find points in range interval
