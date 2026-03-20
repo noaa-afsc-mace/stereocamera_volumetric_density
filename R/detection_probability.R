@@ -15,8 +15,8 @@
 #' @export
 #' @return A data frame containing range, number observed and number expected. The number observed is constrained to be <=number expected.
 prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=FALSE){
-  if (is.null(nbins)){# Sturgis
-    nbins=ceiling(log2(length(target_ranges))+1)
+  if (is.na(nbins)){# Sturgis
+    nbins=ceiling(3.322*log10(length(target_ranges))+1)
   }
 
     bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
@@ -32,6 +32,8 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
     ind=which(target_ranges>bin_edges[i] & target_ranges<=bin_edges[i+1])
     bin_counts[i]=length(ind)
   }
+  # force minimum volume of 0
+  volume[which(volume<0)]=0
   dens=bin_counts/volume
   # determine the local_density
   if (is.null(loc_dens)){# user didn't specify
@@ -48,18 +50,18 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
            col="red", lty=2, cex=0.8)
   }
   # generate expected count per range interval
-  exp_count=loc_dens*volume
+  exp_count=round(loc_dens*volume)
   # create data frame
-  density_data=data.frame(range=bin_mids,dens,exp_count,obs_count=bin_counts)
+  density_data=data.frame(range=bin_mids,dens,exp_count,obs_count=bin_counts, volume=volume)
   # implement constraint for max observed value
   ind=which(density_data$obs_count>density_data$exp_count)
   density_data$obs_count[ind]=density_data$exp_count[ind]
 
-  return(density_data)
+  return(list(data=density_data,loc_dens=loc_dens))
 }
 
 #' density function fitting. Models specified with a method flag.
-#' @param density_data vector of ranges for a given target
+#' @param range_data a data frame containing range, number observed, number expected
 #' @param method flag specifying which model to use. Valid choices include 'logistic glm', ADD
 #' @param formula optional formula to pass to the model, otherwise defaults are used
 #' @param stepAIC boolean flag to do backwards step AIC selection or not
@@ -67,7 +69,7 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
 #' @export
 #' @return A R model output structure
 
-fit_density_function = function(density_data,
+fit_density_function = function(range_data,
                                 method=c('logistic glm','logistic gam'),
                                 formula=NULL,
 #                                dostepAIC=TRUE,
@@ -77,19 +79,64 @@ fit_density_function = function(density_data,
   if (method=='logistic glm'){
     if(is.null(formula))
       formula <- cbind(obs_count, exp_count - obs_count) ~ range# + I(range^2) + I(range^3) +I(range^4)
-    out <- glm(formula = formula, data = density_data,
+    out <- glm(formula = formula, data = range_data,
                family = binomial(link="logit"))
       # if(dostepAIC) out <- step(out)
 
   } else if(method=='logistic gam'){
     formula <- cbind(obs_count, exp_count - obs_count) ~ s(range)
-    out <- gam::gam(formula = formula, data = density_data,
+    out <- gam::gam(formula = formula, data = range_data,
                   family = binomial(link="logit"))
   }
 
   detect.function <- function(range) {
   predict(out, newdata=data.frame(range=range), type='response')
 }
+  if (plotting){
+    plot(range_data$range,range_data$obs_count/range_data$exp_count,main = method,xlab='range from camera (m)',ylab='probability of detection')
+    x=seq(0, max(range_data$range),length.out=100)
+    y=detect.function(x)
+    lines(x,y,col="red")
+    legend(max(x)*0.7, 0.95*max(y), legend=c("probability function"),
+           col="red", lty=1, cex=0.8)
+  }
+  return(list(model=out, detect.function=detect.function))
+}
+
+
+#' density function fitting. Models specified with a method flag.
+#' @param range_data a data frame containing range, number observed, number expected, and a covariate
+#' @param method flag specifying which model to use. Valid choices include 'logistic glm', ADD
+#' @param formula optional formula to pass to the model, otherwise defaults are used
+#' @param stepAIC boolean flag to do backwards step AIC selection or not
+#' @param plotting boolean flag to indicate whether to make plots
+#' @export
+#' @return A R model output structure
+
+fit_density_function_covariate = function(range_data,
+                                method=c('logistic glm','logistic gam'),
+                                formula=NULL,
+                                #                                dostepAIC=TRUE,
+                                plotting=FALSE){
+  method <- match.arg(method)
+  # do the binning bit
+  if (method=='logistic glm'){
+    if(is.null(formula))
+      formula <- cbind(obs_count, exp_count - obs_count) ~ range + cov_factor# + I(range^2) + I(range^3) +I(range^4)
+    out <- glm(formula = formula, data = range_data,
+               family = binomial(link="logit"))
+    # if(dostepAIC) out <- step(out)
+
+  } else if(method=='logistic gam'){
+    formula <- cbind(obs_count, exp_count - obs_count) ~ s(range) + s(cov_factor)
+    out <- gam::gam(formula = formula, data = density_data,
+                    family = binomial(link="logit"))
+  }
+
+  detect.function <- function(range,cov_factor) {
+    if (length(cov_factor)==1){cov_factor=rep(cov_factor,length(range))}
+    predict(out, newdata=data.frame(range=range, cov_factor=cov_factor), type='response')
+  }
   if (plotting){
     plot(density_data$range,density_data$obs_count/density_data$exp_count,main = method,xlab='range from camera (m)',ylab='probability of detection')
     x=seq(0, max(density_data$range),length.out=100)

@@ -3,10 +3,10 @@
 
 rm(list = ls())
 library(StereoCamVolume)
-runjellyfish=FALSE
+runjellyfish=TRUE
 runpollock=FALSE
 runkrill=FALSE
-runyelloweye=TRUE
+runyelloweye=FALSE
 
 if (runjellyfish==TRUE){
 ##########################################################################
@@ -16,24 +16,26 @@ if (runjellyfish==TRUE){
 load('data/jellyfish.rda')
 
 # get the volume estimated
-vol <- get_vol_func(jellyfish$cal,max_extent=5, grid_size=0.05, plotting=TRUE, units='m3', seafloor_position=c(30,15,1))
+vol <- get_vol_func(jellyfish$cal,max_extent=5, grid_size=0.05, plotting=TRUE, units='m3')
 
 # get density data
 detection_data=prep_detection_data(target_ranges=jellyfish$targets$RANGE,
-    vol_func=vol$vol_func, nbins=NULL, method='mean', nvals=3, loc_dens=NULL, plotting=TRUE)
-
-# round inputs to remove glm warning
-detection_data$exp_count <- round(detection_data$exp_count)
-detection_data$obs_count <- round(detection_data$obs_count)
+    vol_func=vol$vol_func, nbins=8, method='mean', nvals=3, loc_dens=NULL, plotting=TRUE)
 
 # fit detection function
 out <- fit_density_function(detection_data,method='logistic glm',formula=NULL, plotting=TRUE)
 
-
 # integrate
 eff_vol_jellyfish=integrate(eff_vol_func,lower =0,
                             upper =max(jellyfish$targets$RANGE), vol$vol_func, out$detect.function)$value
+# plot the effective volume function for kicks
+x=seq(0,3,length.out=100)
+eff_func_curve=eff_vol_func(x,vol$vol_func, out$detect.function)
+plot(x,eff_func_curve)
+
 }
+
+
 ##########################################################################
 ###############  Yelloweye rockfish example - Stonewall bank, Oregon coast 2019 ############
 if (runyelloweye==TRUE){
@@ -47,9 +49,6 @@ if (runyelloweye==TRUE){
   # get density data
   detection_data=prep_detection_data(target_ranges=yelloweye$targets$RANGE,
                                      vol_func=vol$vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=TRUE)
-  # round inputs to remove glm warning
-  detection_data$exp_count <- round(detection_data$exp_count)
-  detection_data$obs_count <- round(detection_data$obs_count)
 
   # fit detection function
   out <- fit_density_function(detection_data,method='logistic gam',formula=NULL, plotting=TRUE)
@@ -71,9 +70,6 @@ vol <- get_vol_func(pollock$cal,max_extent=8, grid_size=0.05, plotting=TRUE)
 # get density data
 detection_data=prep_detection_data(target_ranges=pollock$targets$RANGE,
                                    vol_func=vol$vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=TRUE)
-# round inputs to remove glm warning
-detection_data$exp_count <- round(detection_data$exp_count)
-detection_data$obs_count <- round(detection_data$obs_count)
 
 # fit detection function
 out <- fit_density_function(detection_data,method='logistic gam',formula=NULL, plotting=TRUE)
@@ -95,9 +91,6 @@ if (runkrill==TRUE){
   # get density data
   detection_data=prep_detection_data(target_ranges=krill$targets$Range,
                                      vol_func=vol$vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=TRUE)
-  # round inputs to remove glm warning
-  detection_data$exp_count <- round(detection_data$exp_count)
-  detection_data$obs_count <- round(detection_data$obs_count)
 
   # fit detection function
   out <- fit_density_function(detection_data,method='logistic gam',formula=NULL, plotting=TRUE)

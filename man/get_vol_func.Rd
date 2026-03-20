@@ -22,7 +22,7 @@ get_vol_func(
 
 \item{units}{this parameter sets the general volumetric units of the analysis (cubic meters ("m3") for larger systems, or liter ("l") for smaller ones)}
 
-\item{seafloor_position}{a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane}
+\item{seafloor_position}{a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane and theheight of the camera from that plane}
 
 \item{cal}{A yaml file (full path) from which to read the calibration values.}
 }

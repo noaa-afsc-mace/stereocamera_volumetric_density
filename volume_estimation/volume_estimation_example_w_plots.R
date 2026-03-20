@@ -1,6 +1,7 @@
 rm(list = ls())
 
 library(R.matlab)
+library(plotly)
 library(plot3D)
 library(ptinpoly)
 library(MASS)
@@ -15,7 +16,7 @@ matcal <- readMat("accessory_functions/example_calibrations/matlab_caltech_examp
 
 # this code sets up the view "cones"
 # we use this to figure out which points in space are visible to the camera
-normT=1000 # extent of visual field in mm
+normT=8000 # extent of visual field in mm
 im_dim=c(2048,1536)
 
 BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
@@ -44,13 +45,31 @@ xr=IP_right[1,]/1000
 yr=IP_right[3,]/1000
 zr=-IP_right[2,]/1000
 
+xl=c(xl,xl[13])
+yl=c(yl,yl[13])
+zl=c(zl,zl[13])
+xr=c(xr,xr[13])
+yr=c(yr,yr[13])
+zr=c(zr,zr[13])
 #plot
-par(mar = c(0, 0, 0, 2))
-lines3D(xl,yl,zl,xlab = "x (m)", ylab = "y (m)", zlab = "z (m)", col="black",linewidth = 5)
-lines3D(xr,yr,zr, col="green",add = TRUE)
+# par(mar = c(0, 0, 0, 2))
+#
+# lines3D(xl,yl,zl,lwd = 3,xlab = "x (m)", ylab = "y (m)", zlab = "z (m)", col="black")
+# lines3D(xr,yr,zr,lwd = 3, col="gray", add = TRUE)
 
+
+# dataL=data.frame(cbind(x=c(xl,xl[13]),y=c(yl,yl[13]),z=c(zl,zl[13])))
+# dataR=data.frame(cbind(x=c(xr,xr[13]),y=c(yr,yr[13]),z=c(zr,zr[13])))
+# fig <- plot_ly(dataL, x = ~x, y = ~y, z = ~z, type = 'scatter3d', mode = 'lines',
+#                opacity = 1,line = list(width = 6, color = "black",linetype = "dashed", reverscale = FALSE))
+# fig <-  add_trace(fig, x = ~c(xr,xr[13]), y = ~c(yr,yr[13]), z = ~c(zr,zr[13]), type = 'scatter3d', mode = 'lines',
+#              opacity = 1,line = list(width = 6, color = "gray", reverscale = FALSE))%>%layout(plot_bgcolor="gray45",
+# xaxis = list(range = list(-0.5, 0.5)),yaxis = list(range = list(0,1)))
+
+
+# show(fig)
 # generate grid points
-sc=0.5
+sc=0.1
 # making sure we envelop the entire view cones with points
 xg_vec=seq(floor(min(c(xl,xr))*10)/10,ceiling(max(c(xl,xr))*10)/10,by=sc)
 yg_vec=seq(floor(min(c(yl,yr))*10)/10,ceiling(max(c(yl,yr))*10)/10,by=sc)
@@ -73,7 +92,11 @@ pts_in_right=pip3d(verts_right,faces,grid_left)
 in_right=which(pts_in_right==1)
 grid_both=grid_left[in_right,]
 
-eqscplot(grid_both[,2],grid_both[,3],pch = 16,col="red")
+# points3D(grid_both[,1], grid_both[,2], grid_both[,3], zlim = range(grid_both[,3], na.rm = TRUE),
+#               add = TRUE, col = "gray45",
+#               pch = 21, cex.min = 1, cex.max = 1)
+
+#eqscplot(grid_both[,2],grid_both[,3],pch = 16,col="red")
 # now to figure out the "change in volume" function
 range_bins=seq(0.5,7.5,by=1)# these are the boundaries - only going out to 13 m as there are edge effects
 grid_pt_ranges=sqrt(grid_both[,1]^2+grid_both[,2]^2+grid_both[,3]^2)# euclidean distance to origin (left camera)
@@ -88,15 +111,24 @@ for (i in 1:7){
   vol[i]=length(ind)*v_pt
 }
 cam_range=1:7
-plot(cam_range,vol)
+#plot(cam_range,vol)
 
 # fit 2 order polynomial to this
 p_vol= coef(lm(vol ~cam_range +I(cam_range^2)))
 disp_range=seq(0,7,length.out = 100)
 y=p_vol[1]+p_vol[2]*disp_range+p_vol[3]*disp_range^2
-lines(disp_range,y,col="green")
+plotdf=data.frame(cbind(cam_range, vol))
+plotdf2=data.frame(cbind(x=disp_range, y=y))
+p2=ggplot(plotdf, aes(x=cam_range, y=vol)) +
+  geom_point(shape = 1, size = 3) +
+  geom_line(data=plotdf2, mapping=aes(x=disp_range, y = y), color = "black", linewidth = 0.5) +
+  labs(title = "", x = "range from camera (m)", y = expression("change in volume (m"^"3)"),color="Legend")  +
+  theme_bw()+ theme(legend.position = "top")
+print(p2)
+#lines(disp_range,y,col="green")
 
-# create the function object for itegration
-vol_func<- function(x,p_vol){p_vol[1]+p_vol[2]*x+p_vol[3]*x^2}
 
-save(p_vol, range_bins, vol_func, file = "pelagicam_2023_vol.RData")
+
+
+
+

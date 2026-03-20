@@ -17,6 +17,7 @@ bootstrap_effective_volume(
   model_method = "logistic glm",
   formula = NULL,
   boot_n = 500,
+  percentiles = c(0.025, 0.975),
   plotting = FALSE
 )
 }
@@ -37,12 +38,14 @@ bootstrap_effective_volume(
 
 \item{boot_n}{number of bootstrap iterations}
 
+\item{percentiles}{two element vector between 0 and 1 indicating the lower and upper confidence intervals}
+
 \item{plotting}{boolean flag to indicate whether to make plots}
 
 \item{targets}{vector of ranges for a given target}
 }
 \value{
-A data frame containing range, number observed and number expected. The number observed is constrained to be <=number expected.
+A list, including vector of effective volumes, the model object, and the confidence intervals
 }
 \description{
 Bin the data for fitting the model.  This involves
