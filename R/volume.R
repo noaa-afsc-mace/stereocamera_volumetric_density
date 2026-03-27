@@ -4,13 +4,13 @@
 #' @param grid_size grid spacing in m determining the density of the point cloud.
 #' @param plotting boolean flag to indicate whether to make plots
 #' @param units this parameter sets the general volumetric units of the analysis (cubic meters ("m3") for larger systems, or liter ("l") for smaller ones)
-#' @param seafloor_position a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane and theheight of the camera from that plane
+#' @param floor_position a set of three parameters indicating two angles (roll, then tilt) of the seafloor plane and theheight of the camera from that plane
 #' @return A list containing the function vol_func and a vector of coefficients p_vol
 #' @references Bouget (2008) Camera calibration toolbox for Matlab. Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
 #' @details to do
 #' @export
-get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units='m3', seafloor_position=c(NA,NA,NA)){
-  # code below is adopted from the camera calibration toolbox
+get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units='m3', floor_position=c(NA,NA,NA)){
+  # code below is adapted from the camera calibration toolbox
   #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
   # cited as Bouguet, J.Y., 2008. Camera calibration toolbox for Matlab [online]. [Available from http://vision.caltech.edu/bouguetj/calib_doc/index.html (accessed September 2008)].
   # Calibration (Cal) should be a list of lists from reading in standard yml file
@@ -25,7 +25,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
     xlab='range from camera (dm)'
   }
   normT=max_extent*scaling # extent of visual field in mm
-
+  # rough estimation of viewfields for point cloud generation
   BASE_left = normT*(t(matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1),3,3)) %*%
                        t(matrix(c(1/Cal$Camera1$Intrinsic$focal_length$h, 0, 0, 0, 1/Cal$Camera1$Intrinsic$focal_length$v, 0, 0, 0, 1),3,3)) %*%
                        t(matrix(c(1, 0, -Cal$Camera1$Intrinsic$principal_point$h, 0, 1, -Cal$Camera1$Intrinsic$principal_point$v, 0, 0, 1),3,3)) %*%
@@ -85,10 +85,10 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   # now revert us back to the natural axis orientation
   grid_both=matrix(c(grid_both[,1],grid_both[,3],-grid_both[,2]),length(grid_both[,1]),3)
 
-  if (!is.na(seafloor_position[1])) {
+  if (!is.na(floor_position[1])) {
     # here we want to rotate grid and remove points that are sub surface
-    a=-seafloor_position[1]*pi/180 # tilt in radians
-    b=-seafloor_position[2]*pi/180 # roll in radians
+    a=floor_position[1]*pi/180 # tilt in radians
+    b=floor_position[2]*pi/180 # roll in radians
     g=0 #  yaw not implemented
     # assemble rotation matrix
     Rot=matrix(data=c(cos(a)*cos(g),
@@ -100,17 +100,12 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
                       -sin(b),
                       cos(b)*sin(a),
                       cos(a)*cos(b)),nrow=3,ncol=3,byrow=TRUE)
-
-    k=t(grid_both)
-    grid_both_rot=t(Rot%*%k)# rotate point grid
-    grid_both_rot[,3]=grid_both_rot[,3]+seafloor_position[3]# change Z to account fro camera height
+    Trans=matrix(data=c(0,0,floor_position[3]),3,nrow(grid_both))
+    grid_both_rot=t(Rot%*%t(grid_both)+Trans)# rotate point grid
     grid_both_rot=grid_both_rot[which(grid_both_rot[,3]>0),]# keep points above sea floor (e.g. positive points)
-    #eqscplot(grid_both_rot[,2],grid_both_rot[,3],pch = 16,col="red")
-    grid_both_rot[,3]=grid_both_rot[,3]-seafloor_position[3]
-    k=t(grid_both_rot)
     Rotinv=solve(Rot)
-    grid_both=t(Rotinv%*%k)
-    # eqscplot(grid_both_back[,1],grid_both_back[,3],pch = 16,col="green")
+    Trans=matrix(data=c(0,0,floor_position[3]),3,nrow(grid_both_rot))
+    grid_both=t(Rotinv%*%t(grid_both_rot)-Trans)
   }
 
 
@@ -149,7 +144,7 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
 
 #' @param cal A yaml file (full path) from which to read the calibration values.
 #' @param target_positions 3d coordinates in appropriate units.
-#' @param scaling this relates calibbration units to real world.
+#' @param scaling this relates calibration units to real world.
 #' @return target positions within both viewing cones
 #' @references Williams, K., Rooper, C.N., De Robertis, A., Levine, M. and Towler, R., 2018. A method for computing volumetric fish density using stereo cameras. Journal of Experimental Marine Biology and Ecology, 508, pp.21-26.
 #' @details to do
@@ -195,7 +190,7 @@ find_targets_in_view <- function(Cal, scaling, target_positions){
 #' @references
 #' @details to do
 #' @export
-readCalibration <- function(filename,method='matlab_caltech'){
+read_calibration <- function(filename,method='matlab_caltech'){
   if (method=='matlab_caltech'){
     library(R.matlab)
     Calraw = readMat(filename)

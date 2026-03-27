@@ -33,22 +33,22 @@ for (i in 1:length(deployments$deployment_id)){
   # get the volume estimated
   # pick the appropriate cal
   if (deployments$unit[i]==101){
-    Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_1_regcal.mat','matlab_caltech')
+    Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_1_regcal.mat','matlab_caltech')
   }
   else if (deployments$unit[i]==102){
-    Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_2_regcal.mat','matlab_caltech')
+    Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_2_regcal.mat','matlab_caltech')
   }
   else if (deployments$unit[i]==103){
-    Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_3_regcal.mat','matlab_caltech')
+    Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_3_regcal.mat','matlab_caltech')
   }
   else if (deployments$unit[i]==105){
-    Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_6_regcal.mat','matlab_caltech')
+    Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_6_regcal.mat','matlab_caltech')
   }
   else if (deployments$unit[i]==108){
-    Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_8_regcal.mat','matlab_caltech')
+    Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_8_regcal.mat','matlab_caltech')
   }
-  seafloor_position=c(deployments$angle[i],0,deployments$cam_height[i])
-  volume_out <- get_vol_func(Cal,max_extent=5, grid_size=0.05, plotting=FALSE, units='m3', seafloor_position=seafloor_position)
+  seafloor_position=c(-deployments$angle[i],0,deployments$cam_height[i])
+  volume_out <- get_vol_func(Cal,max_extent=5, grid_size=0.05, plotting=FALSE, units='m3', floor_position=seafloor_position)
   # get density data
   ind=which(targets$deployment_id==deployments$assembled[i])
   if (length(ind)>0){
@@ -56,7 +56,10 @@ for (i in 1:length(deployments$deployment_id)){
     prep_data=prep_detection_data(target_ranges=targets_for_dep$range,
                                   vol_func=volume_out$vol_func, nbins=15, method='mean', nvals=3, loc_dens=NULL, plotting=FALSE)
     prep_data$data$cov_factor=deployments$farthest_dist[i]
-    prep_data_frame=rbind(prep_data_frame,prep_data$data)
+    if (!is.infinite(prep_data$data$exp_count[1])){
+      prep_data_frame=rbind(prep_data_frame,prep_data$data)
+      }
+
     }
   }
 
@@ -86,7 +89,7 @@ p2=ggplot(plotdf2, aes(x=x)) +
 # now a figure that has change in effective volume with covariate
 cov_factor=seq(1,4.5,by=0.25)
 eff_volume=vector(mode="numeric",length=length(cov_factor))
-Cal=readCalibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_1_regcal.mat','matlab_caltech')
+Cal=read_calibration('C:/Users/kresimir.williams/Work/trigcam/2019_coop_analysis/KW_analysis/unit_1_regcal.mat','matlab_caltech')
 seafloor_position=c(mean(deployments$angle),0,mean(deployments$cam_height))
 volume_out <- get_vol_func(Cal,max_extent=5, grid_size=0.05, plotting=FALSE, units='m3')
 
