@@ -2,6 +2,7 @@
 
 export(bootstrap_effective_volume)
 export(dummy)
+export(eff_vol_compute)
 export(eff_vol_func)
 export(eff_vol_func_covariate)
 export(find_targets_in_view)

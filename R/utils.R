@@ -12,6 +12,20 @@ eff_vol_func<- function(x, f_vol, f_detect){
   f_vol(x)*f_detect(x)
 }
 
+#
+#' @param integration_range range over which to integrate
+#' @param f_vol function that defines change in volume with range from camera
+#' @param f_detect function that defines probability of detection with range from camera
+#' @export
+#' @return floating point effective volume estimate
+#  this is a convenience function to make it easier to run the integration
+eff_vol_compute <- function(integration_range=c(0,99),f_vol, f_detect){
+  x=seq(integration_range[1],integration_range[2],length.out=100)
+  eff_vol_int_obj=integrate(eff_vol_func,lower =integration_range[1],
+                                      upper =integration_range[2], f_vol, f_detect)
+  return(eff_vol_int_obj$value)
+}
+
 #' @param x input for range from camera.
 #' @param cov_factor covariance factor. Can be a single value or vector same length as x
 #' @param f_vol function that defines change in volume with range from camera

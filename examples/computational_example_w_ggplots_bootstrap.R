@@ -17,7 +17,7 @@ if (runjellyfish==TRUE){
 
 # this data set comes with the package now - replaced with a read function bc I don't know how this runs :-(
 load('data/jellyfish.rda')
-
+# the calibration is part of the example dataset, otherwise, you read it in using yaml.load(read_yaml(cal file.yaml)) or if not already in yaml format, use read_calibration
 # get the volume estimated
 volume_out <- get_vol_func(jellyfish$cal,max_extent=4, grid_size=0.05, plotting=FALSE, units='m3')
 # volume_plot
@@ -102,7 +102,7 @@ if (runyelloweye==TRUE){
 
   # get the volume estimated
   # for this example, we are removing the seafloor from the picture.  We know the camera is 0.35 m from teh seafloor, which is tilted up 1.74 degrees
-  volume_out <- get_vol_func(yelloweye$cal,max_extent=7, grid_size=0.05, plotting=FALSE,units='m3', seafloor_position=c(1.74,0,0.35))
+  volume_out <- get_vol_func(yelloweye$cal,max_extent=7, grid_size=0.05, plotting=FALSE,units='m3', floor_position=c(1.74,0,0.35))
 
   prep_out=prep_detection_data(target_ranges=yelloweye$targets$RANGE,
                                vol_func=volume_out$vol_func, nbins=25, method='mean', nvals=3, loc_dens=NULL, plotting=FALSE)
@@ -243,7 +243,7 @@ if (runkrill==TRUE){
 
   p10=ggplot(prep_out$data, aes(x=range, y=dens)) +
     geom_bar(stat = "identity") +
-    labs(title = "Euphausia sp.", x = "range from camera (m)", y = expression("est. agg. density (#/m"^"3)"))  +
+    labs(title = "Euphausiidae", x = "range from camera (m)", y = expression("est. agg. density (#/m"^"3)"))  +
     theme_bw() + geom_hline(yintercept=prep_out$loc_dens)+
     annotate("text", x = 10, y = prep_out$loc_dens-3, label = "Est. Max Dens.") +
     scale_x_continuous(breaks=c(5,10,15), labels=c(0.5,1,1.5))

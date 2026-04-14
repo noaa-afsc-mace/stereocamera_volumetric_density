@@ -8,8 +8,9 @@ library(patchwork)
 # read in a calibration
 Cal=read_calibration('accessory_functions/example_calibrations/matlab_caltech_example2.mat','matlab_caltech')
 
+max_extent=4 # maximum we want to plot the field
 scaling=1000# scaling value is 1000, because calibration is in units of mm
-normT=4*scaling # extent of visual field in mm, 4 m extent scaled by scaling :-)
+normT=max_extent*scaling # extent of visual field in mm, 4 m extent scaled by scaling :-)
 
 # the following code block is adapted from the camera calibration toolbox
 #http://robots.stanford.edu/cs223b04/JeanYvesCalib/
@@ -133,60 +134,96 @@ fig <- fig %>% layout(
   showlegend = TRUE
 )
 
-show(fig)
+#show(fig)
 # another way to view the field
-dataPth=data.frame(cbind(x=grid_both_rot[,1],y=grid_both_rot[,2],z=grid_both_rot[,3]))
-p1=ggplot(dataPth, aes(x=x, y=y)) +
-  geom_point(shape = 16, size = 3,color="red") +
-  labs(title = "top", x = "X (m)", y = "Y (m)")  +
-  theme_bw()
-p2=ggplot(dataPth, aes(x=y, y=z)) +
-  geom_point(shape = 16, size = 3,color="red") +
-  labs(title = "side", x = "Y (m)", y = "Z (m)")  +
-  theme_bw()
-p3=ggplot(dataPth, aes(x=x, y=z)) +
-  geom_point(shape = 16, size = 3,color="red") +
-  labs(title = "front", x = "X (m)", y = "Z (m)")  +
-  theme_bw()
-
-(p1|p2|p3)
+# dataPth=data.frame(cbind(x=grid_both_rot[,1],y=grid_both_rot[,2],z=grid_both_rot[,3]))
+# p1=ggplot(dataPth, aes(x=x, y=y)) +
+#   geom_point(shape = 16, size = 3,color="red") +
+#   labs(title = "top", x = "X (m)", y = "Y (m)")  +
+#   theme_bw()
+# p2=ggplot(dataPth, aes(x=y, y=z)) +
+#   geom_point(shape = 16, size = 3,color="red") +
+#   labs(title = "side", x = "Y (m)", y = "Z (m)")  +
+#   theme_bw()
+# p3=ggplot(dataPth, aes(x=x, y=z)) +
+#   geom_point(shape = 16, size = 3,color="red") +
+#   labs(title = "front", x = "X (m)", y = "Z (m)")  +
+#   theme_bw()
+#
+# (p1|p2|p3)
 
 
 # now to figure out the "change in volume" function
-range_bins=seq(0.5,4.5,by=1)# these are the boundaries - only going out to 13 m as there are edge effects
+
 camera_pos=c(0,0,floor_position[3])
 grid_pt_ranges=sqrt((grid_both_rot[,1]-camera_pos[1])^2+
                       (grid_both_rot[,2]-camera_pos[2])^2+
                       (grid_both_rot[,3]-camera_pos[3])^2)# euclidean distance to origin (left camera)
-vol=vector(mode="numeric",length=4)
+range_bins=seq(min(grid_pt_ranges),round(max_extent)-0.5,length.out=25)# these are the boundaries - only going out to max extent -0.5 m as there are edge effects
+range_bin_halfpoint=(range_bins[2]-range_bins[1])/2
+c_vol=vector(mode="numeric",length=length(range_bins))
 v_pt=grid_size^3
 # The key here is that the bin width is equivalent to the unit, (e.g. 1 m).
 # This gives us the change function.
-for (i in 1:4){
+for (i in 1:length(range_bins)){
   # find points in range interval
-  ind=which(grid_pt_ranges>range_bins[i] & grid_pt_ranges<=range_bins[i+1])
+  ind=which(grid_pt_ranges<=range_bins[i]+range_bin_halfpoint)
   # number of points times volume per point
-  vol[i]=length(ind)*v_pt
+  c_vol[i]=length(ind)*v_pt
 }
-cam_range=1:4
 
-
-
-# fit 2 order polynomial to this
-p_vol= coef(lm(vol ~cam_range +I(cam_range^2)))
-disp_range=seq(0.5,4.5,length.out = 100)
-y=p_vol[1]+p_vol[2]*disp_range+p_vol[3]*disp_range^2
-plotdf=data.frame(cbind(cam_range, vol))
-plotdf2=data.frame(cbind(x=disp_range, y=y))
-p4=ggplot(plotdf, aes(x=cam_range, y=vol)) +
-  geom_point(shape = 1, size = 3) +
-  geom_line(data=plotdf2, mapping=aes(x=disp_range, y = y), color = "red", linewidth = 0.5) +
-  labs(title = "", x = "range from camera (m)", y = expression("change in volume (m"^"3)"),color="Legend")  +
+x0=min(grid_pt_ranges)# nearest range point
+x=range_bins
+# fit 3rd degree cumulative volume function (F) forced though nearest ranged point
+pc_vol= as.numeric(coef(lm(c_vol ~-1 +x +I((x-x0)^2) +I((x-x0)^3))))
+#make a plot
+x=seq(0,max(range_bins),length.out=50)
+y=pc_vol[1]*(x-x0)+pc_vol[2]*(x-x0)^2+pc_vol[3]*(x-x0)^3
+plotdf=data.frame(range_bins=range_bins,c_vol=c_vol)
+plotdf2=data.frame(cbind(x=x, y=y))
+p1=ggplot() +
+  geom_point(data=plotdf,aes(x=range_bins, y=c_vol, color = 'Point cloud est.'), shape = 3, size = 3) +
+  geom_line(data=plotdf2, mapping=aes(x=x, y = y, color = 'Cum. vol. function'), linewidth = 0.5) +
+  scale_color_manual(values = c('black', 'black')) +
+  guides(color = guide_legend("")) +
+  # Add the arrow
+  annotate("segment", x = x0, y = 2, xend = x0, yend = 0,
+           arrow = arrow(length = unit(0.3, "cm")), color = "black") +
+  # Add accompanying text
+  annotate("text", x = x0, y = 2.5, label = expression("x"[0]), color = "black") +
+  labs(title = "", x = "range from camera (m)", y = expression("cumulative volume (m"^"3)"),color="Legend")  +
   theme_bw()+ theme(legend.position = "top")
-show(p4)
+p1
 
 
+#
+vol_func<- function(x){ifelse(x<=x0,0,2*pc_vol[2]*(x-x0)+3*pc_vol[3]*(x-x0)^2)}
+# fit 2 order polynomial to this
 
+y=vol_func(x)
+ind1=which(x==1.5)
+ind2=which(x==2.5)
+ind=c(seq(1,ind1),seq(ind1,ind2),seq(ind2,length(x)))
+ya=y[ind]
+
+ya[seq(1,ind1)]=0
+ya[seq(ind2+2,length(ya))]=0
+x=x[ind]
+y=vol_func(x)
+plotdf2=data.frame(cbind(x=x, y=y))
+p2=ggplot(plotdf2, aes(x=x, y=y)) +
+  geom_line(aes(y = y, color = "Vol. change function"), linewidth = 0.5) +
+  geom_area(aes(y = ya, fill = "Volume"), alpha = 0.4) +
+
+  scale_color_manual(name = "", values = c("Vol. change function" = "black")) +
+  scale_fill_manual(name = "", values = c("Volume" = "gray45")) +
+  labs(title = "", x = "range from camera (m)", y = expression("change in volume (m"^"3)"),color="Legend")  +
+
+  theme_bw()+ theme(legend.position = "top")
+# show(p2)
+
+
+(p1|p2)
 
 
 

@@ -110,35 +110,39 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
 
 
   # now to figure out the "change in volume" function
-  range_bins=seq(0.5,round(max_extent)-0.5,by=1)# these are the boundaries - only going out to max_extent m as there are edge effects
-  grid_pt_ranges=sqrt(grid_both[,1]^2+grid_both[,2]^2+grid_both[,3]^2)# euclidean distance to origin (left camera)
-  vol=vector(mode="numeric",length=round(max_extent)-1)
-  v_pt=grid_size^3
-  # The key here is that the bin width is equivalent to the unit, (e.g. 1 m).
-  # This gives us the change function.
-  for (i in 1:round(max_extent)-1){
-    # find points in range interval
-    ind=which(grid_pt_ranges>range_bins[i] & grid_pt_ranges<=range_bins[i+1])
-    # number of points times volume per point
-    vol[i]=length(ind)*v_pt
-  }
-  range_centers=0:(round(max_extent)-1)
-  vol=c(0,vol)
-  # fit 2 order polynomial to this
-  p_vol= as.numeric(coef(lm(vol ~range_centers +I(range_centers^2))))
 
+  grid_pt_ranges=sqrt(grid_both[,1]^2+grid_both[,2]^2+grid_both[,3]^2)# euclidean distance to origin (left camera)
+  range_bins=seq(min(grid_pt_ranges),round(max_extent)-0.5,by=grid_size)
+  range_bin_halfpoint=(range_bins[2]-range_bins[1])/2
+  c_vol=vector(mode="numeric",length=round(max_extent)-1)
+  v_pt=grid_size^3
+  # We get cumulative volume by bin
+  for (i in 1:length(range_bins)){
+    # find points in range interval
+    ind=which(grid_pt_ranges<=range_bins[i]+range_bin_halfpoint)
+    # number of points times volume per point
+    c_vol[i]=length(ind)*v_pt
+  }
+ #forces function though nearest detected grid point, such that volume at this point is =0
+  x0=min(grid_pt_ranges)# nearest range point
+  x=range_bins
+  # fit 3rd degree cumulative volume function (F) forced though nearest ranged point
+  pc_vol= as.numeric(coef(lm(c_vol ~-1 +x +I((x-x0)^2) +I((x-x0)^3))))
+  vol_func<- function(x){ifelse(x<=x0,0,2*pc_vol[2]*(x-x0)+3*pc_vol[3]*(x-x0)^2)}
+
+
+  # get derivative of cumulative 2 order polynomial function
   # create the function object for itegration
-  vol_func<- function(x){p_vol[1]+p_vol[2]*x+p_vol[3]*x^2}
+
 
   # plot if asked to
   if (plotting){
-    plot(range_centers,vol,xlab=xlab,ylab='change in volume')
-    x=seq(0, max(range_centers),length.out=100)
-    y=vol_func(x)
-    lines(x,y,col="red")
+    plot(range_bins,c_vol,xlab=xlab,ylab='change in volume')
+    y=vol_func(range_bins)
+    lines(range_bins,y,col="red")
   }
 
-  return(list(vol_func=vol_func, p_vol=p_vol, vol=vol, range_centers=range_centers))
+  return(list(vol_func=vol_func, p_vol=pc_vol, vol=c_vol, range_bins=range_bins,x0=x0))
 }
 
 

@@ -18,7 +18,7 @@ if (runjellyfish==TRUE){
 load('data/jellyfish.rda')
 
 # get the volume estimated
-volume_out <- get_vol_func(jellyfish$cal,max_extent=4, grid_size=0.05, plotting=TRUE, units='m3')
+volume_out <- get_vol_func(jellyfish$cal,max_extent=4, grid_size=0.05, plotting=FALSE, units='m3')
 # volume_plot
 x=seq(0,2.5,length.out=100)
 y=volume_out$vol_func(x)
@@ -54,9 +54,8 @@ p2=ggplot(prep_out$data, aes(x=range, y=obs_count/exp_count)) + geom_point() +
   theme_bw()
 print(p2)
 
-# integrate
-eff_vol_jellyfish=integrate(eff_vol_func,lower =0,
-                            upper =max(jellyfish$targets$RANGE), volume_out$vol_func, detection_out$detect.function)$value
+# compute effective volume
+eff_vol_jellyfish=eff_vol_compute(integration_range=c(0,max(jellyfish$targets$RANGE)),volume_out$vol_func, detection_out$detect.function)
 
 # plot the area under curve
 x=seq(0,2.5,length.out=100)
@@ -67,7 +66,7 @@ p3=ggplot(plotdf, aes(x=x, y=y)) +
   geom_line(color = "black", linewidth = 0.5) +
   labs(title = "", x = "range from camera (m)", y = "Volume x detection")  +
   theme_bw() +
-  annotate("text", x = 0.85, y = 0.02, label = expression("Effective Volume = 0.20 m"^"3"))
+  annotate("text", x = 0.85, y = 0.02, label = expression("Effective Volume = 0.14 m"^"3"))
 print(p3)
 
 }
