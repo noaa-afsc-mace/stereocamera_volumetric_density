@@ -19,8 +19,6 @@ fit_density_function_covariate(
 \item{formula}{optional formula to pass to the model, otherwise defaults are used}
 
 \item{plotting}{boolean flag to indicate whether to make plots}
-
-\item{stepAIC}{boolean flag to do backwards step AIC selection or not}
 }
 \value{
 A R model output structure

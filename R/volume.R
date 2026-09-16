@@ -112,14 +112,14 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   # now to figure out the "change in volume" function
 
   grid_pt_ranges=sqrt(grid_both[,1]^2+grid_both[,2]^2+grid_both[,3]^2)# euclidean distance to origin (left camera)
-  range_bins=seq(min(grid_pt_ranges),round(max_extent)-0.5,by=grid_size)
+  range_bins=seq(0,round(max_extent),by=grid_size)
   range_bin_halfpoint=(range_bins[2]-range_bins[1])/2
   c_vol=vector(mode="numeric",length=round(max_extent)-1)
   v_pt=grid_size^3
   # We get cumulative volume by bin
   for (i in 1:length(range_bins)){
     # find points in range interval
-    ind=which(grid_pt_ranges<=range_bins[i]+range_bin_halfpoint)
+    ind=which(grid_pt_ranges<=range_bins[i])
     # number of points times volume per point
     c_vol[i]=length(ind)*v_pt
   }
@@ -127,13 +127,10 @@ get_vol_func <- function(Cal, max_extent=8, grid_size=0.1, plotting=FALSE, units
   x0=min(grid_pt_ranges)# nearest range point
   x=range_bins
   # fit 3rd degree cumulative volume function (F) forced though nearest ranged point
-  pc_vol= as.numeric(coef(lm(c_vol ~-1 +x +I((x-x0)^2) +I((x-x0)^3))))
-  vol_func<- function(x){ifelse(x<=x0,0,2*pc_vol[2]*(x-x0)+3*pc_vol[3]*(x-x0)^2)}
-
-
+  pc_vol= as.numeric(coef(lm(c_vol ~-1 + I(x-x0) +I((x-x0)^2) +I((x-x0)^3))))
   # get derivative of cumulative 2 order polynomial function
   # create the function object for itegration
-
+  vol_func<- function(x){ifelse(x<=x0,0,pc_vol[1]+2*pc_vol[2]*(x-x0)+3*pc_vol[3]*(x-x0)^2)}
 
   # plot if asked to
   if (plotting){
@@ -160,6 +157,7 @@ find_targets_in_view <- function(Cal, scaling, target_positions){
   TmatRight=matrix(c(Cal$Camera2$Extrinsic$T$t1, Cal$Camera2$Extrinsic$T$t2, Cal$Camera2$Extrinsic$T$t3),3,1)
   # pixel projection method
   #adopted from https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
+  # we need to change projection setup
   #left projection (impose translation/rotation, although for matlab / opencv this doesn't change values
   target_positions=t(RmatLeft %*% t(target_positions)+matrix(TmatLeft/scaling,3, nrow(target_positions)))
   xp=target_positions[,1]/target_positions[,3]
@@ -183,13 +181,14 @@ find_targets_in_view <- function(Cal, scaling, target_positions){
   v=Cal$Camera2$Intrinsic$focal_length$v*yf+Cal$Camera2$Intrinsic$principal_point$v
   in_right=which(u>0 & u<Cal$Camera2$Intrinsic$image_size$width & v>0 & v<Cal$Camera2$Intrinsic$image_size$height)
   target_positions_both=target_positions_left[in_right,]
+
   return(target_positions_both)
 
 }
 
 
-#' @param filename path to calibration file. For seagis files, it needs to be two files, one for left and one for right in that order
-#' @param method this flag refers to which type of calibration file is being provided. Curent options are matlab_caltech, opencv, and seagis.
+#' @param filename path to calibration file. For SeaGIS files, it needs to be two files, one for left and one for right in that order
+#' @param method this flag refers to which type of calibration file is being provided. Current options are matlab_caltech, opencv, and seagis.
 #' @return calibration structure
 #' @references
 #' @details to do

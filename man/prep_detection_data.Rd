@@ -14,6 +14,7 @@ prep_detection_data(
   method = "median",
   nvals = 5,
   loc_dens = NULL,
+  target_extent = NULL,
   plotting = FALSE
 )
 }
@@ -28,12 +29,14 @@ prep_detection_data(
 
 \item{loc_dens}{a value that can be entered to provide a separate externally estimated local density. Default is NULL.}
 
+\item{target_extent}{range of acceptable target ranges. If NULL the max target distance is used.}
+
 \item{plotting}{boolean flag to indicate whether to make plots}
 
 \item{targets}{vector of ranges for a given target}
 }
 \value{
-A data frame containing range, number observed and number expected. The number observed is constrained to be <=number expected.
+A list containing a data frame containing range, number observed and number expected, and the estimate of max local density. The number observed is constrained to be <=number expected.
 }
 \description{
 Bin the data for fitting the model.  This involves

@@ -12,6 +12,34 @@ eff_vol_func<- function(x, f_vol, f_detect){
   f_vol(x)*f_detect(x)
 }
 
+#' @param x input for range from camera in m
+#' @param dens density per bin as computed by dividing observations by the volume
+#' @param n_obs number of observations used to compute density to use as weighting
+#' @export
+# define effective volume function
+loc_dens_func<- function(x, dens, n_obs){
+  p50_dens_est=max(dens)/2
+  ind=which(min(abs(dens-p50_dens_est))==abs(dens-p50_dens_est))
+
+  logistic_curve = function(par, x, dens, n_obs){
+    dens_hat=par[2]/(1+9^((par[1]-x)/-0.5))
+    ss=(dens-dens_hat)^2*n_obs
+    return(sum(ss))
+  }
+  init_par=c(x[ind],mean(dens[1:ind]))
+  fit <- optim(
+    par = init_par,        # Initial guesses
+    fn = logistic_curve,         # Function to minimize
+    x = x,                 # Passed to loss_fun
+    dens=dens,
+    n_obs=n_obs,# Passed to loss_fun
+    method = "BFGS",       # Optimization algorithm (L-BFGS-B if bounds are needed)
+    hessian = TRUE         # Calculate Hessian matrix for standard errors
+  )
+  return(fit$par[2])
+}
+
+
 #
 #' @param integration_range range over which to integrate
 #' @param f_vol function that defines change in volume with range from camera
@@ -19,7 +47,7 @@ eff_vol_func<- function(x, f_vol, f_detect){
 #' @export
 #' @return floating point effective volume estimate
 #  this is a convenience function to make it easier to run the integration
-eff_vol_compute <- function(integration_range=c(0,99),f_vol, f_detect){
+compute_eff_vol <- function(integration_range=c(0,99),f_vol, f_detect){
   x=seq(integration_range[1],integration_range[2],length.out=100)
   eff_vol_int_obj=integrate(eff_vol_func,lower =integration_range[1],
                                       upper =integration_range[2], f_vol, f_detect)

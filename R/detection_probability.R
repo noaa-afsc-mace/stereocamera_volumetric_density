@@ -11,35 +11,49 @@
 #' @param method method to determine the local density based on change in density by range.  Valid choices are 'median' and 'mean'
 #' @param nvals an integer specifying how many of the highest density values to average for local density.
 #' @param loc_dens a value that can be entered to provide a separate externally estimated local density. Default is NULL.
+#' @param target_extent range of acceptable target ranges. If NULL the max target distance is used.
 #' @param plotting boolean flag to indicate whether to make plots
+
 #' @export
-#' @return A data frame containing range, number observed and number expected. The number observed is constrained to be <=number expected.
-prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, plotting=FALSE){
+#' @return A list containing a data frame containing range, number observed and number expected, and the estimate of max local density. The number observed is constrained to be <=number expected.
+prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='median', nvals=5, loc_dens=NULL, target_extent=NULL, plotting=FALSE){
   if (is.na(nbins)){# Sturgis
     nbins=ceiling(3.322*log10(length(target_ranges))+1)
   }
-
+  if (is.null(target_extent)){
     bin_edges=seq(min(target_ranges),max(target_ranges),length.out=nbins+1)
+    }
+
+  else {
+      bin_edges=seq(target_extent[1],target_extent[2],length.out=nbins+1)
+      }
     bin_mids=bin_edges[1:nbins]+(bin_edges[2]-bin_edges[1])/2
 
 
   volume=numeric(length=length(bin_mids))
   bin_counts=numeric(length=length(bin_mids))
+  dens=numeric(length=length(bin_mids))
   for (i in 1:length(bin_mids)){
     # this is integrating how much volume is in each bin to get to density
     v=integrate(vol_func,lower = bin_edges[i], upper = bin_edges[i+1])
-    volume[i]=v$value
+    # force minimum volume of 0
+    if (v$value>0){volume[i]=v$value}
+    else {volume[i]=0}
+
     ind=which(target_ranges>bin_edges[i] & target_ranges<=bin_edges[i+1])
     bin_counts[i]=length(ind)
+    if ((volume[i]>0)){dens[i]=bin_counts[i]/volume[i]}
+    else {dens[i]=0}
   }
-  # force minimum volume of 0
-  volume[which(volume<0)]=0
-  dens=bin_counts/volume
+
   # determine the local_density
   if (is.null(loc_dens)){# user didn't specify
     sort_dens=sort(dens,decreasing=TRUE)
     if (method=='mean'){loc_dens=mean(sort_dens[1:nvals])}
     else if (method=='median'){loc_dens=median(sort_dens[1:nvals])}
+    else if (method == 'model'){
+      loc_dens=loc_dens_func(bin_mids, dens, bin_counts)
+    }
     else loc_dens=max(dens)
   }
   # plot density values
@@ -64,7 +78,6 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
 #' @param range_data a data frame containing range, number observed, number expected
 #' @param method flag specifying which model to use. Valid choices include 'logistic glm', ADD
 #' @param formula optional formula to pass to the model, otherwise defaults are used
-#' @param stepAIC boolean flag to do backwards step AIC selection or not
 #' @param plotting boolean flag to indicate whether to make plots
 #' @export
 #' @return A R model output structure
@@ -72,7 +85,6 @@ prep_detection_data <- function(target_ranges, vol_func, nbins=25, method='media
 fit_density_function = function(range_data,
                                 method=c('logistic glm','logistic gam'),
                                 formula=NULL,
-#                                dostepAIC=TRUE,
                                 plotting=FALSE){
   method <- match.arg(method)
   # do the binning bit
@@ -108,7 +120,6 @@ fit_density_function = function(range_data,
 #' @param range_data a data frame containing range, number observed, number expected, and a covariate
 #' @param method flag specifying which model to use. Valid choices include 'logistic glm', ADD
 #' @param formula optional formula to pass to the model, otherwise defaults are used
-#' @param stepAIC boolean flag to do backwards step AIC selection or not
 #' @param plotting boolean flag to indicate whether to make plots
 #' @export
 #' @return A R model output structure
@@ -116,7 +127,6 @@ fit_density_function = function(range_data,
 fit_density_function_covariate = function(range_data,
                                 method=c('logistic glm','logistic gam'),
                                 formula=NULL,
-                                #                                dostepAIC=TRUE,
                                 plotting=FALSE){
   method <- match.arg(method)
   # do the binning bit
@@ -125,7 +135,6 @@ fit_density_function_covariate = function(range_data,
       formula <- cbind(obs_count, exp_count - obs_count) ~ range + cov_factor# + I(range^2) + I(range^3) +I(range^4)
     out <- glm(formula = formula, data = range_data,
                family = binomial(link="logit"))
-    # if(dostepAIC) out <- step(out)
 
   } else if(method=='logistic gam'){
     formula <- cbind(obs_count, exp_count - obs_count) ~ s(range) + s(cov_factor)

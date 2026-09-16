@@ -1,0 +1,26 @@
+Extrinsic:
+
+      R:# Standard 3D rotation matrix, defined for each camera relative to the coordinate system origin. 
+
+      T:# Translation matrix, indicating the shift of the camera position relative to the coordinate system origin. units are the same as the calibration target units, specified during calibration.  For OpenCV and Matlab, these are usually mm.
+
+	  note: For OpenCV and Matlab calibrations, the origin is the location of the left or primary camera, which means the  
+
+Intrinsic:
+
+  focal_length:# distance from the lens optical center to the imager plane. Expressed in pixel units.  To convert to mm, multiply by the pixel dimension.  Two values provided for horizontal and vertical dimensions, but for most modern systems with square pixels these should be the same. 
+  
+  principal_point:# The specific spot on an image sensor where the perpendicular optical axis of the lens meets the image plane, defined in pixel coordinates.  Should be roughly in the center of the image, so 1/2 times the horizontal and vertical resolution.
+
+  image_size:# pixel resolution of the image in both dimensions.
+  
+  pixel_size:# Optional parameter to help convert pixel dimensions to real world units. 
+
+  radial_distortion:# adjustment for lens distortions that radiate from the center of the image, including barrel (negative k1), pincushion (positive k1), and mustache (more complicated pattern) distortions. Typically limited to 3rd order (n=3) parameters, although the third parameter is usually very small and can usually be disregarded or fixed to 0.
+
+  tangential_distortion:# Usually caused by physical elements in a lens not being perfectly aligned, which is rare in modern lens systems. Also known as decentering distortion.  Can often be ignored (fixed to 0)
+
+	note: Distortion parameters are based on the Brown–Conrady model, and are used as standard formulation of computer vision image normalization (undistorting) with OpenCV and Matlab libraries.
+
+For more information see https://en.wikipedia.org/wiki/Distortion_(optics), https://robots.stanford.edu/cs223b04/JeanYvesCalib/htmls/parameters.html,
+https://docs.opencv.org/4.13.0/d9/d0c/group__calib3d.html
